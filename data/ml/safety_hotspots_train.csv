@@ -1,0 +1,161 @@
+incidentId,incidentType,latitude,longitude,incidentDate,severity,locationDescription,schoolId
+INC-0001,physical_altercation,28.536705,77.392517,2026-03-04,high,Behind Sports Complex,SCH-001
+INC-0002,bullying,28.534016,77.38996,2025-09-11,medium,East Stairwell - Block B,SCH-001
+INC-0003,theft,28.536249,77.390137,2026-01-15,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0004,bullying,28.533912,77.392361,2026-01-27,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0005,physical_altercation,28.53658,77.391946,2025-12-30,high,Behind Sports Complex,SCH-001
+INC-0006,bullying,28.53417,77.389957,2026-02-20,medium,East Stairwell - Block B,SCH-001
+INC-0007,theft,28.535974,77.390137,2026-03-13,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0008,bullying,28.533667,77.392819,2026-03-27,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0009,physical_altercation,28.536962,77.392517,2026-04-14,high,Behind Sports Complex,SCH-001
+INC-0010,bullying,28.534027,77.389916,2025-11-21,medium,East Stairwell - Block B,SCH-001
+INC-0011,theft,28.535923,77.39025,2025-11-17,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0012,bullying,28.533721,77.392113,2026-02-13,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0013,physical_altercation,28.536859,77.392305,2026-01-02,high,Behind Sports Complex,SCH-001
+INC-0014,bullying,28.534395,77.389635,2025-11-25,medium,East Stairwell - Block B,SCH-001
+INC-0015,theft,28.536086,77.390289,2026-03-16,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0016,bullying,28.533832,77.392788,2026-01-07,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0017,physical_altercation,28.53656,77.39202,2025-11-20,high,Behind Sports Complex,SCH-001
+INC-0018,bullying,28.534087,77.389761,2026-02-26,medium,East Stairwell - Block B,SCH-001
+INC-0019,theft,28.536084,77.389959,2025-11-06,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0020,bullying,28.534004,77.392395,2026-01-29,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0021,physical_altercation,28.536962,77.392404,2025-11-07,high,Behind Sports Complex,SCH-001
+INC-0022,bullying,28.53413,77.38979,2025-12-12,medium,East Stairwell - Block B,SCH-001
+INC-0023,theft,28.536094,77.390127,2025-09-18,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0024,bullying,28.534185,77.392111,2026-02-11,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0025,physical_altercation,28.536783,77.392304,2025-08-18,high,Behind Sports Complex,SCH-001
+INC-0026,bullying,28.534139,77.389915,2025-09-15,medium,East Stairwell - Block B,SCH-001
+INC-0027,theft,28.536313,77.389794,2026-01-21,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0028,bullying,28.533937,77.392143,2025-12-29,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0029,physical_altercation,28.536589,77.392298,2026-01-02,high,Behind Sports Complex,SCH-001
+INC-0030,bullying,28.534187,77.389605,2026-01-15,medium,East Stairwell - Block B,SCH-001
+INC-0031,theft,28.535886,77.389918,2025-11-27,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0032,bullying,28.534032,77.392288,2026-03-27,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0033,physical_altercation,28.536731,77.392463,2025-10-29,high,Behind Sports Complex,SCH-001
+INC-0034,bullying,28.534102,77.389533,2025-11-11,medium,East Stairwell - Block B,SCH-001
+INC-0035,theft,28.536198,77.390157,2025-12-08,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0036,bullying,28.533815,77.392853,2026-02-11,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0037,physical_altercation,28.536772,77.392187,2026-03-27,high,Behind Sports Complex,SCH-001
+INC-0038,bullying,28.534489,77.389905,2025-09-22,medium,East Stairwell - Block B,SCH-001
+INC-0039,theft,28.536145,77.389945,2025-12-23,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0040,bullying,28.533864,77.392593,2025-09-25,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0041,physical_altercation,28.537182,77.392431,2025-09-08,high,Behind Sports Complex,SCH-001
+INC-0042,bullying,28.53416,77.389744,2026-03-26,medium,East Stairwell - Block B,SCH-001
+INC-0043,theft,28.535968,77.39031,2025-09-11,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0044,bullying,28.533984,77.392923,2026-03-05,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0045,physical_altercation,28.537255,77.392137,2026-02-17,high,Behind Sports Complex,SCH-001
+INC-0046,bullying,28.534173,77.389796,2025-08-27,medium,East Stairwell - Block B,SCH-001
+INC-0047,theft,28.536197,77.390115,2026-01-27,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0048,bullying,28.533794,77.392446,2025-09-05,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0049,physical_altercation,28.537016,77.392146,2025-12-10,high,Behind Sports Complex,SCH-001
+INC-0050,bullying,28.534328,77.389911,2025-12-24,medium,East Stairwell - Block B,SCH-001
+INC-0051,theft,28.536275,77.389922,2025-12-09,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0052,bullying,28.533793,77.392243,2026-02-10,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0053,physical_altercation,28.536864,77.39203,2026-01-29,high,Behind Sports Complex,SCH-001
+INC-0054,bullying,28.534131,77.389734,2026-03-11,medium,East Stairwell - Block B,SCH-001
+INC-0055,theft,28.536038,77.390387,2025-09-10,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0056,bullying,28.533772,77.392585,2026-03-23,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0057,physical_altercation,28.536754,77.392195,2025-10-03,high,Behind Sports Complex,SCH-001
+INC-0058,bullying,28.534219,77.38961,2025-11-19,medium,East Stairwell - Block B,SCH-001
+INC-0059,theft,28.535935,77.390092,2026-01-20,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0060,bullying,28.53372,77.392676,2025-10-27,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0061,physical_altercation,28.536896,77.392437,2026-01-26,high,Behind Sports Complex,SCH-001
+INC-0062,bullying,28.534313,77.389722,2026-04-21,medium,East Stairwell - Block B,SCH-001
+INC-0063,theft,28.535968,77.390145,2026-03-16,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0064,bullying,28.533889,77.392413,2025-10-01,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0065,physical_altercation,28.536843,77.392082,2026-04-10,high,Behind Sports Complex,SCH-001
+INC-0066,bullying,28.534341,77.389863,2026-03-18,medium,East Stairwell - Block B,SCH-001
+INC-0067,theft,28.536095,77.390063,2025-09-23,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0068,bullying,28.533773,77.392595,2026-02-17,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0069,physical_altercation,28.536719,77.392383,2026-04-20,high,Behind Sports Complex,SCH-001
+INC-0070,bullying,28.534457,77.390146,2025-11-04,medium,East Stairwell - Block B,SCH-001
+INC-0071,theft,28.536224,77.389983,2025-10-31,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0072,bullying,28.533918,77.392327,2025-12-15,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0073,physical_altercation,28.536636,77.392044,2026-04-23,high,Behind Sports Complex,SCH-001
+INC-0074,bullying,28.534118,77.38983,2026-02-13,medium,East Stairwell - Block B,SCH-001
+INC-0075,theft,28.535963,77.390126,2025-09-02,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0076,bullying,28.533827,77.39257,2026-02-17,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0077,physical_altercation,28.536842,77.392109,2026-01-08,high,Behind Sports Complex,SCH-001
+INC-0078,bullying,28.533912,77.38978,2025-12-31,medium,East Stairwell - Block B,SCH-001
+INC-0079,theft,28.535661,77.390314,2026-03-09,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0080,bullying,28.533743,77.39253,2026-04-23,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0081,physical_altercation,28.536847,77.391885,2025-11-14,high,Behind Sports Complex,SCH-001
+INC-0082,bullying,28.534055,77.389977,2025-11-21,medium,East Stairwell - Block B,SCH-001
+INC-0083,theft,28.536335,77.390149,2025-12-10,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0084,bullying,28.53369,77.392468,2026-01-13,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0085,physical_altercation,28.537094,77.392342,2026-03-19,high,Behind Sports Complex,SCH-001
+INC-0086,bullying,28.53398,77.38974,2025-11-20,medium,East Stairwell - Block B,SCH-001
+INC-0087,theft,28.535991,77.390419,2025-12-25,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0088,bullying,28.533898,77.392406,2026-02-26,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0089,physical_altercation,28.5369,77.392177,2026-02-09,high,Behind Sports Complex,SCH-001
+INC-0090,bullying,28.534145,77.389475,2026-02-19,medium,East Stairwell - Block B,SCH-001
+INC-0091,theft,28.535952,77.390416,2025-10-30,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0092,bullying,28.533734,77.392322,2025-09-15,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0093,physical_altercation,28.537088,77.39203,2026-02-04,high,Behind Sports Complex,SCH-001
+INC-0094,bullying,28.53398,77.38971,2025-11-06,medium,East Stairwell - Block B,SCH-001
+INC-0095,theft,28.535909,77.390091,2025-11-19,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0096,bullying,28.533742,77.392436,2026-03-20,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0097,physical_altercation,28.537085,77.392122,2026-03-25,high,Behind Sports Complex,SCH-001
+INC-0098,bullying,28.533999,77.389868,2026-04-03,medium,East Stairwell - Block B,SCH-001
+INC-0099,theft,28.536231,77.390025,2025-11-25,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0100,bullying,28.533939,77.392491,2025-08-19,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0101,physical_altercation,28.536739,77.392012,2026-01-05,high,Behind Sports Complex,SCH-001
+INC-0102,bullying,28.534596,77.389592,2025-09-09,medium,East Stairwell - Block B,SCH-001
+INC-0103,theft,28.536364,77.390061,2025-08-21,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0104,bullying,28.533637,77.392219,2026-01-19,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0105,physical_altercation,28.53718,77.392293,2025-10-17,high,Behind Sports Complex,SCH-001
+INC-0106,bullying,28.533997,77.389952,2026-02-12,medium,East Stairwell - Block B,SCH-001
+INC-0107,theft,28.536164,77.390014,2025-09-05,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0108,bullying,28.533946,77.392308,2025-09-17,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0109,physical_altercation,28.5364,77.391992,2025-09-19,high,Behind Sports Complex,SCH-001
+INC-0110,bullying,28.533833,77.389705,2026-04-21,medium,East Stairwell - Block B,SCH-001
+INC-0111,theft,28.536038,77.389816,2026-01-08,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0112,bullying,28.533678,77.392739,2025-10-31,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0113,physical_altercation,28.536667,77.391991,2026-01-06,high,Behind Sports Complex,SCH-001
+INC-0114,bullying,28.534232,77.39001,2026-01-21,medium,East Stairwell - Block B,SCH-001
+INC-0115,theft,28.536092,77.390016,2026-01-22,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0116,bullying,28.533839,77.392781,2025-10-30,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0117,physical_altercation,28.537041,77.391855,2026-04-06,high,Behind Sports Complex,SCH-001
+INC-0118,bullying,28.533929,77.389872,2026-02-25,medium,East Stairwell - Block B,SCH-001
+INC-0119,theft,28.536241,77.390098,2025-09-03,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0120,bullying,28.533674,77.392553,2025-10-21,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0121,physical_altercation,28.536766,77.392332,2025-08-19,high,Behind Sports Complex,SCH-001
+INC-0122,bullying,28.534291,77.389675,2025-09-26,medium,East Stairwell - Block B,SCH-001
+INC-0123,theft,28.536224,77.389935,2025-12-05,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0124,bullying,28.533989,77.392205,2025-11-19,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0125,physical_altercation,28.536883,77.391948,2026-04-16,high,Behind Sports Complex,SCH-001
+INC-0126,bullying,28.534256,77.389995,2026-03-31,medium,East Stairwell - Block B,SCH-001
+INC-0127,theft,28.535954,77.390195,2026-03-23,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0128,bullying,28.533794,77.392523,2025-09-23,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0129,physical_altercation,28.53693,77.392397,2026-02-12,high,Behind Sports Complex,SCH-001
+INC-0130,bullying,28.534196,77.390177,2025-11-20,medium,East Stairwell - Block B,SCH-001
+INC-0131,theft,28.536057,77.390025,2025-11-27,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0132,bullying,28.533834,77.392173,2026-04-15,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0133,physical_altercation,28.536424,77.392492,2026-03-11,high,Behind Sports Complex,SCH-001
+INC-0134,bullying,28.534334,77.389602,2025-08-19,medium,East Stairwell - Block B,SCH-001
+INC-0135,theft,28.5364,77.390014,2025-09-15,low,Unmonitored Cafeteria Corner,SCH-001
+INC-0136,bullying,28.533835,77.392366,2026-02-05,high,Back Gate / Bus Parking Bay,SCH-001
+INC-0137,theft,28.535144,77.390945,2026-03-05,low,Open Campus Grounds,SCH-001
+INC-0138,vandalism,28.535221,77.391633,2025-11-10,low,Open Campus Grounds,SCH-001
+INC-0139,theft,28.534112,77.389621,2025-09-23,low,Open Campus Grounds,SCH-001
+INC-0140,theft,28.536679,77.390671,2026-03-02,low,Open Campus Grounds,SCH-001
+INC-0141,theft,28.537249,77.390675,2025-11-20,low,Open Campus Grounds,SCH-001
+INC-0142,theft,28.534718,77.390192,2025-09-17,low,Open Campus Grounds,SCH-001
+INC-0143,theft,28.535675,77.389677,2026-01-05,low,Open Campus Grounds,SCH-001
+INC-0144,theft,28.536605,77.391738,2025-11-24,low,Open Campus Grounds,SCH-001
+INC-0145,other,28.535616,77.389115,2026-03-26,low,Open Campus Grounds,SCH-001
+INC-0146,theft,28.53506,77.389269,2026-01-08,low,Open Campus Grounds,SCH-001
+INC-0147,other,28.535595,77.392798,2025-09-12,low,Open Campus Grounds,SCH-001
+INC-0148,theft,28.536006,77.390403,2025-08-21,low,Open Campus Grounds,SCH-001
+INC-0149,theft,28.536952,77.392184,2025-09-08,low,Open Campus Grounds,SCH-001
+INC-0150,vandalism,28.535408,77.389198,2026-01-26,low,Open Campus Grounds,SCH-001
+INC-0151,other,28.53744,77.392312,2025-08-18,low,Open Campus Grounds,SCH-001
+INC-0152,other,28.534968,77.392088,2025-11-05,low,Open Campus Grounds,SCH-001
+INC-0153,vandalism,28.534184,77.392302,2025-10-08,low,Open Campus Grounds,SCH-001
+INC-0154,vandalism,28.535561,77.391289,2026-02-13,low,Open Campus Grounds,SCH-001
+INC-0155,theft,28.534195,77.389226,2025-08-28,low,Open Campus Grounds,SCH-001
+INC-0156,other,28.536814,77.3907,2025-11-26,low,Open Campus Grounds,SCH-001
+INC-0157,vandalism,28.534073,77.391942,2025-12-17,low,Open Campus Grounds,SCH-001
+INC-0158,vandalism,28.537111,77.392646,2025-09-16,low,Open Campus Grounds,SCH-001
+INC-0159,theft,28.536426,77.392984,2025-11-18,low,Open Campus Grounds,SCH-001
+INC-0160,theft,28.537342,77.390389,2025-12-22,low,Open Campus Grounds,SCH-001

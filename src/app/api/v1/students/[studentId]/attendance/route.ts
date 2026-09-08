@@ -1,0 +1,29 @@
+import { NextRequest } from "next/server";
+import { StudentService } from "@/services/student.service";
+import { apiSuccess } from "@/lib/api-response";
+import { handleAPIError } from "@/lib/api-error";
+
+export async function GET(
+  request: NextRequest,
+  props: { params: Promise<{ studentId: string }> }
+) {
+  try {
+    const params = await props.params;
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const pageSize = parseInt(searchParams.get("pageSize") || "20", 10);
+    const fromDate = searchParams.get("fromDate") || undefined;
+    const toDate = searchParams.get("toDate") || undefined;
+
+    const result = await StudentService.getStudentAttendance(params.studentId, {
+      page,
+      pageSize,
+      fromDate,
+      toDate,
+    });
+
+    return apiSuccess(result.records, result.meta);
+  } catch (error) {
+    return handleAPIError(error);
+  }
+}

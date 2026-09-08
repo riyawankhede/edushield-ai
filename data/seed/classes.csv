@@ -1,0 +1,10 @@
+classId,name,grade,section,academicYear,roomNumber,schoolId
+CLS-9A,Grade 9-A,9,A,2025-26,Room 91,SCH-001
+CLS-9B,Grade 9-B,9,B,2025-26,Room 92,SCH-001
+CLS-9C,Grade 9-C,9,C,2025-26,Room 93,SCH-001
+CLS-10A,Grade 10-A,10,A,2025-26,Room 101,SCH-001
+CLS-10B,Grade 10-B,10,B,2025-26,Room 102,SCH-001
+CLS-10C,Grade 10-C,10,C,2025-26,Room 103,SCH-001
+CLS-11A,Grade 11-A,11,A,2025-26,Room 111,SCH-001
+CLS-11B,Grade 11-B,11,B,2025-26,Room 112,SCH-001
+CLS-11C,Grade 11-C,11,C,2025-26,Room 113,SCH-001

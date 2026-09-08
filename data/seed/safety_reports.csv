@@ -1,0 +1,121 @@
+reportId,reporterStudentId,isAnonymous,reportType,description,locationDescription,status,createdAt,schoolId
+REP-0001,STU-2026-0110,True,other,"Everything feels pointless lately, I can barely get out of bed in the morning.",Behind Sports Complex,under_review,2025-08-26,SCH-001
+REP-0002,STU-2026-0490,True,physical_threat,Two seniors were trying to pick a fight with me outside the gymnasium.,Back Gate / Bus Parking Bay,under_review,2026-01-28,SCH-001
+REP-0003,STU-2026-0397,True,bullying,Persistent teasing and name-calling by seniors during assembly lineup.,Unmonitored Cafeteria Corner,under_review,2026-04-07,SCH-001
+REP-0004,STU-2026-0210,True,physical_threat,A student pushed me hard against the lockers in the hallway and told me to watch my back.,Unmonitored Cafeteria Corner,under_review,2026-04-10,SCH-001
+REP-0005,STU-2026-0496,False,bullying,Persistent teasing and name-calling by seniors during assembly lineup.,Behind Sports Complex,resolved,2026-04-20,SCH-001
+REP-0006,STU-2026-0397,True,bullying,Someone wrote awful rumors about me on the bathroom wall.,Behind Sports Complex,resolved,2025-11-19,SCH-001
+REP-0007,STU-2026-0253,True,bullying,"Every time I answer a question in English class, three students mock the way I speak.",Unmonitored Cafeteria Corner,under_review,2025-08-28,SCH-001
+REP-0008,STU-2026-0358,True,physical_threat,I was shoved down near the bleachers during recess and threatened not to report it.,Back Gate / Bus Parking Bay,under_review,2026-03-25,SCH-001
+REP-0009,STU-2026-0302,False,other,"I sit alone every single day in the back row, nobody even says hello.",Unmonitored Cafeteria Corner,new,2026-02-24,SCH-001
+REP-0010,STU-2026-0378,True,other,"I feel so exhausted mentally and physically, I just want to disappear for a while.",Behind Sports Complex,under_review,2025-12-09,SCH-001
+REP-0011,STU-2026-0497,True,other,I feel completely overwhelmed by everything right now and I don't know what to do.,Unmonitored Cafeteria Corner,new,2025-09-09,SCH-001
+REP-0012,STU-2026-0407,True,bullying,They keep hiding my school bag and mocking my accent during lunch break.,East Stairwell - Block B,resolved,2025-10-23,SCH-001
+REP-0013,STU-2026-0251,True,bullying,Someone wrote awful rumors about me on the bathroom wall.,Back Gate / Bus Parking Bay,under_review,2025-12-29,SCH-001
+REP-0014,STU-2026-0343,True,physical_threat,Someone cornered me near the staircase and aggressively demanded my lunch money.,Unmonitored Cafeteria Corner,under_review,2025-08-27,SCH-001
+REP-0015,STU-2026-0588,True,physical_threat,I was shoved down near the bleachers during recess and threatened not to report it.,Behind Sports Complex,resolved,2025-11-26,SCH-001
+REP-0016,STU-2026-0276,False,other,"Left out of every activity during sports period, nobody picks me for their team.",Behind Sports Complex,resolved,2025-08-28,SCH-001
+REP-0017,STU-2026-0044,True,bullying,Persistent teasing and name-calling by seniors during assembly lineup.,Back Gate / Bus Parking Bay,resolved,2026-03-31,SCH-001
+REP-0018,STU-2026-0518,True,physical_threat,Someone cornered me near the staircase and aggressively demanded my lunch money.,Unmonitored Cafeteria Corner,under_review,2025-08-20,SCH-001
+REP-0019,STU-2026-0246,False,physical_threat,"Aggressive confrontation in the hallway, someone kicked my backpack into the trash.",Unmonitored Cafeteria Corner,resolved,2025-11-19,SCH-001
+REP-0020,STU-2026-0270,True,physical_threat,"Aggressive confrontation in the hallway, someone kicked my backpack into the trash.",Unmonitored Cafeteria Corner,under_review,2025-08-29,SCH-001
+REP-0021,STU-2026-0503,True,physical_threat,Two seniors were trying to pick a fight with me outside the gymnasium.,Back Gate / Bus Parking Bay,resolved,2026-02-26,SCH-001
+REP-0022,STU-2026-0285,False,physical_threat,I was shoved down near the bleachers during recess and threatened not to report it.,Back Gate / Bus Parking Bay,under_review,2026-03-19,SCH-001
+REP-0023,STU-2026-0520,True,physical_threat,A student pushed me hard against the lockers in the hallway and told me to watch my back.,East Stairwell - Block B,under_review,2026-04-20,SCH-001
+REP-0024,STU-2026-0472,True,other,"Can't focus on anything, feeling hopeless and like I am letting everyone down.",Behind Sports Complex,resolved,2026-01-09,SCH-001
+REP-0025,STU-2026-0500,True,physical_threat,He threw his heavy notebook straight at my face when the teacher stepped out.,East Stairwell - Block B,under_review,2025-12-05,SCH-001
+REP-0026,STU-2026-0230,True,physical_threat,Someone cornered me near the staircase and aggressively demanded my lunch money.,Back Gate / Bus Parking Bay,under_review,2025-08-27,SCH-001
+REP-0027,STU-2026-0240,True,bullying,A group of boys keeps tripping me whenever I walk down the aisle in bus route 4.,Behind Sports Complex,under_review,2025-08-29,SCH-001
+REP-0028,STU-2026-0539,True,physical_threat,I was shoved down near the bleachers during recess and threatened not to report it.,East Stairwell - Block B,under_review,2025-10-01,SCH-001
+REP-0029,STU-2026-0040,True,bullying,Persistent teasing and name-calling by seniors during assembly lineup.,Unmonitored Cafeteria Corner,resolved,2026-02-23,SCH-001
+REP-0030,STU-2026-0574,True,physical_threat,Two seniors were trying to pick a fight with me outside the gymnasium.,Unmonitored Cafeteria Corner,resolved,2026-03-19,SCH-001
+REP-0031,STU-2026-0278,True,bullying,Someone wrote awful rumors about me on the bathroom wall.,Back Gate / Bus Parking Bay,under_review,2025-12-31,SCH-001
+REP-0032,STU-2026-0343,True,other,"Feeling severe burnout, no matter how hard I study my grades keep falling.",Behind Sports Complex,resolved,2025-10-27,SCH-001
+REP-0033,STU-2026-0248,True,physical_threat,He threw his heavy notebook straight at my face when the teacher stepped out.,Back Gate / Bus Parking Bay,resolved,2025-09-10,SCH-001
+REP-0034,STU-2026-0195,True,bullying,A group of boys keeps tripping me whenever I walk down the aisle in bus route 4.,Back Gate / Bus Parking Bay,new,2026-04-20,SCH-001
+REP-0035,STU-2026-0588,True,bullying,A group of boys keeps tripping me whenever I walk down the aisle in bus route 4.,Behind Sports Complex,under_review,2026-01-05,SCH-001
+REP-0036,STU-2026-0216,False,bullying,A group of boys keeps tripping me whenever I walk down the aisle in bus route 4.,Behind Sports Complex,under_review,2025-09-23,SCH-001
+REP-0037,STU-2026-0494,True,other,They made a class group chat without me and were making inside jokes about me today.,Unmonitored Cafeteria Corner,under_review,2025-11-20,SCH-001
+REP-0038,STU-2026-0067,True,physical_threat,They threatened to beat me up after school near the back gate if I tell the teacher.,Behind Sports Complex,resolved,2026-01-09,SCH-001
+REP-0039,STU-2026-0044,True,other,"The academic pressure is breaking me down, I feel like I am drowning under the workload.",Unmonitored Cafeteria Corner,under_review,2025-09-19,SCH-001
+REP-0040,STU-2026-0253,True,physical_threat,He threw his heavy notebook straight at my face when the teacher stepped out.,East Stairwell - Block B,under_review,2026-02-10,SCH-001
+REP-0041,STU-2026-0467,False,physical_threat,They threatened to beat me up after school near the back gate if I tell the teacher.,Back Gate / Bus Parking Bay,under_review,2025-12-03,SCH-001
+REP-0042,STU-2026-0470,False,physical_threat,A student pushed me hard against the lockers in the hallway and told me to watch my back.,Back Gate / Bus Parking Bay,new,2025-11-18,SCH-001
+REP-0043,STU-2026-0253,True,physical_threat,He threw his heavy notebook straight at my face when the teacher stepped out.,Unmonitored Cafeteria Corner,resolved,2025-11-20,SCH-001
+REP-0044,STU-2026-0292,True,bullying,"Every time I answer a question in English class, three students mock the way I speak.",Back Gate / Bus Parking Bay,under_review,2025-11-20,SCH-001
+REP-0045,STU-2026-0230,False,other,"The academic pressure is breaking me down, I feel like I am drowning under the workload.",Back Gate / Bus Parking Bay,under_review,2025-11-13,SCH-001
+REP-0046,STU-2026-0588,True,physical_threat,He threw his heavy notebook straight at my face when the teacher stepped out.,Behind Sports Complex,resolved,2025-12-19,SCH-001
+REP-0047,STU-2026-0590,True,physical_threat,He threw his heavy notebook straight at my face when the teacher stepped out.,Back Gate / Bus Parking Bay,under_review,2026-03-27,SCH-001
+REP-0048,STU-2026-0001,True,bullying,"Every time I answer a question in English class, three students mock the way I speak.",Behind Sports Complex,resolved,2026-02-26,SCH-001
+REP-0049,STU-2026-0500,True,physical_threat,"Aggressive confrontation in the hallway, someone kicked my backpack into the trash.",Behind Sports Complex,resolved,2025-10-29,SCH-001
+REP-0050,STU-2026-0268,True,physical_threat,A student pushed me hard against the lockers in the hallway and told me to watch my back.,Unmonitored Cafeteria Corner,resolved,2026-01-14,SCH-001
+REP-0051,STU-2026-0108,True,physical_threat,He threw his heavy notebook straight at my face when the teacher stepped out.,Back Gate / Bus Parking Bay,under_review,2025-11-12,SCH-001
+REP-0052,STU-2026-0321,True,physical_threat,A student pushed me hard against the lockers in the hallway and told me to watch my back.,Unmonitored Cafeteria Corner,under_review,2025-10-09,SCH-001
+REP-0053,STU-2026-0500,False,physical_threat,Two seniors were trying to pick a fight with me outside the gymnasium.,Unmonitored Cafeteria Corner,resolved,2025-12-30,SCH-001
+REP-0054,STU-2026-0479,True,physical_threat,A student pushed me hard against the lockers in the hallway and told me to watch my back.,Back Gate / Bus Parking Bay,resolved,2025-08-19,SCH-001
+REP-0055,STU-2026-0008,False,physical_threat,He threw his heavy notebook straight at my face when the teacher stepped out.,Back Gate / Bus Parking Bay,under_review,2026-04-07,SCH-001
+REP-0056,STU-2026-0460,True,physical_threat,A student pushed me hard against the lockers in the hallway and told me to watch my back.,East Stairwell - Block B,new,2025-12-04,SCH-001
+REP-0057,STU-2026-0590,True,other,"Feeling severe burnout, no matter how hard I study my grades keep falling.",Unmonitored Cafeteria Corner,under_review,2026-02-17,SCH-001
+REP-0058,STU-2026-0103,True,bullying,They stole my geometry box and threw it out of the third floor window.,Back Gate / Bus Parking Bay,under_review,2025-08-29,SCH-001
+REP-0059,STU-2026-0097,True,physical_threat,A student pushed me hard against the lockers in the hallway and told me to watch my back.,Unmonitored Cafeteria Corner,under_review,2025-11-11,SCH-001
+REP-0060,STU-2026-0478,True,other,"Can't focus on anything, feeling hopeless and like I am letting everyone down.",Behind Sports Complex,new,2026-02-25,SCH-001
+REP-0061,STU-2026-0202,False,other,They made a class group chat without me and were making inside jokes about me today.,Back Gate / Bus Parking Bay,resolved,2026-04-13,SCH-001
+REP-0062,STU-2026-0525,True,physical_threat,A student pushed me hard against the lockers in the hallway and told me to watch my back.,East Stairwell - Block B,resolved,2026-03-26,SCH-001
+REP-0063,STU-2026-0379,True,bullying,Persistent teasing and name-calling by seniors during assembly lineup.,Behind Sports Complex,resolved,2025-08-29,SCH-001
+REP-0064,STU-2026-0599,True,physical_threat,"Aggressive confrontation in the hallway, someone kicked my backpack into the trash.",Behind Sports Complex,under_review,2026-01-20,SCH-001
+REP-0065,STU-2026-0008,True,other,"I feel so exhausted mentally and physically, I just want to disappear for a while.",East Stairwell - Block B,under_review,2026-04-06,SCH-001
+REP-0066,STU-2026-0320,False,physical_threat,He threw his heavy notebook straight at my face when the teacher stepped out.,East Stairwell - Block B,under_review,2025-12-31,SCH-001
+REP-0067,STU-2026-0496,True,bullying,They keep hiding my school bag and mocking my accent during lunch break.,East Stairwell - Block B,under_review,2026-03-17,SCH-001
+REP-0068,STU-2026-0253,True,physical_threat,"Aggressive confrontation in the hallway, someone kicked my backpack into the trash.",Back Gate / Bus Parking Bay,new,2026-03-03,SCH-001
+REP-0069,STU-2026-0221,True,other,"Everything feels pointless lately, I can barely get out of bed in the morning.",Back Gate / Bus Parking Bay,resolved,2026-02-25,SCH-001
+REP-0070,STU-2026-0566,True,bullying,A group of boys keeps tripping me whenever I walk down the aisle in bus route 4.,Back Gate / Bus Parking Bay,resolved,2025-11-05,SCH-001
+REP-0071,STU-2026-0316,True,other,"Everything feels pointless lately, I can barely get out of bed in the morning.",Back Gate / Bus Parking Bay,under_review,2026-02-10,SCH-001
+REP-0072,STU-2026-0253,True,other,"Can't focus on anything, feeling hopeless and like I am letting everyone down.",Behind Sports Complex,under_review,2026-03-23,SCH-001
+REP-0073,STU-2026-0357,True,physical_threat,They threatened to beat me up after school near the back gate if I tell the teacher.,Behind Sports Complex,under_review,2026-03-30,SCH-001
+REP-0074,STU-2026-0450,False,bullying,"Every time I answer a question in English class, three students mock the way I speak.",Unmonitored Cafeteria Corner,under_review,2025-11-20,SCH-001
+REP-0075,STU-2026-0518,True,physical_threat,Someone cornered me near the staircase and aggressively demanded my lunch money.,Behind Sports Complex,under_review,2026-03-03,SCH-001
+REP-0076,STU-2026-0214,True,bullying,Persistent teasing and name-calling by seniors during assembly lineup.,East Stairwell - Block B,under_review,2025-11-17,SCH-001
+REP-0077,STU-2026-0110,True,bullying,"Every time I answer a question in English class, three students mock the way I speak.",Unmonitored Cafeteria Corner,under_review,2025-11-14,SCH-001
+REP-0078,STU-2026-0249,True,other,I am crying almost every day after classes and I don't have anyone to talk to.,Unmonitored Cafeteria Corner,under_review,2025-10-06,SCH-001
+REP-0079,STU-2026-0552,False,bullying,They stole my geometry box and threw it out of the third floor window.,Back Gate / Bus Parking Bay,under_review,2026-01-05,SCH-001
+REP-0080,STU-2026-0340,False,other,"Left out of every activity during sports period, nobody picks me for their team.",Unmonitored Cafeteria Corner,under_review,2025-12-25,SCH-001
+REP-0081,STU-2026-0188,True,physical_threat,A student pushed me hard against the lockers in the hallway and told me to watch my back.,Unmonitored Cafeteria Corner,resolved,2026-01-21,SCH-001
+REP-0082,STU-2026-0305,False,other,"Left out of every activity during sports period, nobody picks me for their team.",Back Gate / Bus Parking Bay,new,2026-02-10,SCH-001
+REP-0083,STU-2026-0472,True,bullying,They keep hiding my school bag and mocking my accent during lunch break.,Back Gate / Bus Parking Bay,resolved,2025-09-15,SCH-001
+REP-0084,STU-2026-0511,True,bullying,They keep hiding my school bag and mocking my accent during lunch break.,East Stairwell - Block B,resolved,2026-04-06,SCH-001
+REP-0085,STU-2026-0499,True,other,"Feeling severe burnout, no matter how hard I study my grades keep falling.",East Stairwell - Block B,resolved,2025-09-11,SCH-001
+REP-0086,STU-2026-0221,True,physical_threat,They threatened to beat me up after school near the back gate if I tell the teacher.,East Stairwell - Block B,resolved,2026-03-24,SCH-001
+REP-0087,STU-2026-0373,True,other,"Everyone ignored me during the group project discussion, it feels like I'm completely invisible.",Unmonitored Cafeteria Corner,under_review,2025-11-17,SCH-001
+REP-0088,STU-2026-0518,True,physical_threat,Two seniors were trying to pick a fight with me outside the gymnasium.,Back Gate / Bus Parking Bay,resolved,2025-09-19,SCH-001
+REP-0089,STU-2026-0251,True,bullying,A group of boys keeps tripping me whenever I walk down the aisle in bus route 4.,Behind Sports Complex,resolved,2025-11-06,SCH-001
+REP-0090,STU-2026-0146,True,physical_threat,I was shoved down near the bleachers during recess and threatened not to report it.,East Stairwell - Block B,under_review,2026-02-18,SCH-001
+REP-0091,STU-2026-0431,False,other,"I feel like I don't belong here at all, I have zero friends in my section.",Behind Sports Complex,under_review,2026-02-20,SCH-001
+REP-0092,STU-2026-0472,True,other,"Feeling severe burnout, no matter how hard I study my grades keep falling.",Behind Sports Complex,under_review,2026-03-11,SCH-001
+REP-0093,STU-2026-0288,False,bullying,A group of boys keeps tripping me whenever I walk down the aisle in bus route 4.,East Stairwell - Block B,under_review,2026-01-16,SCH-001
+REP-0094,STU-2026-0221,False,other,"The academic pressure is breaking me down, I feel like I am drowning under the workload.",East Stairwell - Block B,resolved,2025-11-24,SCH-001
+REP-0095,STU-2026-0316,True,bullying,They took photos of me without permission in class and were laughing about posting them.,Unmonitored Cafeteria Corner,resolved,2026-01-01,SCH-001
+REP-0096,STU-2026-0246,True,bullying,They keep hiding my school bag and mocking my accent during lunch break.,Behind Sports Complex,under_review,2026-03-06,SCH-001
+REP-0097,STU-2026-0036,False,bullying,Persistent teasing and name-calling by seniors during assembly lineup.,Unmonitored Cafeteria Corner,resolved,2025-09-03,SCH-001
+REP-0098,STU-2026-0320,False,other,"I feel so exhausted mentally and physically, I just want to disappear for a while.",Behind Sports Complex,resolved,2026-04-06,SCH-001
+REP-0099,STU-2026-0500,True,bullying,A group of boys keeps tripping me whenever I walk down the aisle in bus route 4.,Behind Sports Complex,under_review,2026-01-14,SCH-001
+REP-0100,STU-2026-0300,True,physical_threat,"Aggressive confrontation in the hallway, someone kicked my backpack into the trash.",Behind Sports Complex,resolved,2026-03-03,SCH-001
+REP-0101,STU-2026-0525,True,other,"The academic pressure is breaking me down, I feel like I am drowning under the workload.",East Stairwell - Block B,resolved,2026-02-16,SCH-001
+REP-0102,STU-2026-0008,True,physical_threat,A student pushed me hard against the lockers in the hallway and told me to watch my back.,East Stairwell - Block B,under_review,2026-03-19,SCH-001
+REP-0103,STU-2026-0212,True,bullying,They keep hiding my school bag and mocking my accent during lunch break.,Back Gate / Bus Parking Bay,new,2026-02-13,SCH-001
+REP-0104,STU-2026-0322,False,physical_threat,Two seniors were trying to pick a fight with me outside the gymnasium.,East Stairwell - Block B,resolved,2025-10-17,SCH-001
+REP-0105,STU-2026-0310,True,other,"I feel so exhausted mentally and physically, I just want to disappear for a while.",Behind Sports Complex,resolved,2026-04-01,SCH-001
+REP-0106,STU-2026-0525,True,physical_threat,Two seniors were trying to pick a fight with me outside the gymnasium.,East Stairwell - Block B,under_review,2026-03-27,SCH-001
+REP-0107,STU-2026-0517,True,physical_threat,They threatened to beat me up after school near the back gate if I tell the teacher.,Behind Sports Complex,under_review,2026-02-05,SCH-001
+REP-0108,STU-2026-0439,False,bullying,They stole my geometry box and threw it out of the third floor window.,Back Gate / Bus Parking Bay,under_review,2026-03-27,SCH-001
+REP-0109,STU-2026-0529,True,physical_threat,I was shoved down near the bleachers during recess and threatened not to report it.,Behind Sports Complex,new,2025-10-16,SCH-001
+REP-0110,STU-2026-0038,True,other,They made a class group chat without me and were making inside jokes about me today.,Unmonitored Cafeteria Corner,under_review,2026-04-10,SCH-001
+REP-0111,STU-2026-0294,True,physical_threat,I was shoved down near the bleachers during recess and threatened not to report it.,Behind Sports Complex,resolved,2025-09-25,SCH-001
+REP-0112,STU-2026-0571,False,bullying,"Every time I answer a question in English class, three students mock the way I speak.",Behind Sports Complex,under_review,2025-08-20,SCH-001
+REP-0113,STU-2026-0260,True,bullying,Someone wrote awful rumors about me on the bathroom wall.,Behind Sports Complex,resolved,2026-01-05,SCH-001
+REP-0114,STU-2026-0424,True,other,"Left out of every activity during sports period, nobody picks me for their team.",East Stairwell - Block B,new,2025-10-21,SCH-001
+REP-0115,STU-2026-0496,True,bullying,Someone wrote awful rumors about me on the bathroom wall.,East Stairwell - Block B,resolved,2026-04-08,SCH-001
+REP-0116,STU-2026-0009,True,physical_threat,I was shoved down near the bleachers during recess and threatened not to report it.,Back Gate / Bus Parking Bay,under_review,2026-01-23,SCH-001
+REP-0117,STU-2026-0460,True,physical_threat,"Aggressive confrontation in the hallway, someone kicked my backpack into the trash.",East Stairwell - Block B,under_review,2026-03-17,SCH-001
+REP-0118,STU-2026-0582,True,other,"Feeling severe burnout, no matter how hard I study my grades keep falling.",Unmonitored Cafeteria Corner,under_review,2025-11-27,SCH-001
+REP-0119,STU-2026-0525,True,bullying,They took photos of me without permission in class and were laughing about posting them.,Unmonitored Cafeteria Corner,under_review,2025-12-10,SCH-001
+REP-0120,STU-2026-0279,True,other,"The academic pressure is breaking me down, I feel like I am drowning under the workload.",Behind Sports Complex,under_review,2026-03-16,SCH-001

@@ -1,0 +1,6 @@
+subjectId,name,code,gradeLevel,schoolId
+SUB-MATH,Mathematics,MATH,9-11,SCH-001
+SUB-PHY,Physics,PHY,9-11,SCH-001
+SUB-CHEM,Chemistry,CHEM,9-11,SCH-001
+SUB-ENG,English,ENG,9-11,SCH-001
+SUB-HIST,History,HIST,9-11,SCH-001
