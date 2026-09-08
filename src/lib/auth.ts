@@ -13,8 +13,10 @@
  */
 
 import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
 import { verifyAccessToken, type DecodedAccessToken } from "@/lib/jwt";
 import { APIError } from "@/lib/api-error";
+import type { UserRole } from "@/types/identity";
 
 /**
  * Authenticated user context.
@@ -103,4 +105,53 @@ export async function getOptionalAuthContext(): Promise<AuthContext | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Require authentication and optionally verify role.
+ *
+ * First authenticates the user via getAuthContext(), then optionally
+ * checks if the authenticated user's role matches one of the allowed roles.
+ *
+ * @param request - Next.js request object (for consistency with route handler signatures)
+ * @param allowedRoles - Optional roles; if provided, user must have one of these roles
+ * @returns Authenticated user context with userId, role, schoolId
+ * @throws {APIError} UNAUTHORIZED (401) if not authenticated
+ * @throws {APIError} FORBIDDEN (403) if authenticated but role not allowed
+ *
+ * Usage examples:
+ * ```typescript
+ * // Any authenticated user
+ * const auth = await requireAuth(request);
+ *
+ * // Only admin
+ * const auth = await requireAuth(request, "admin");
+ *
+ * // Admin or counselor
+ * const auth = await requireAuth(request, "admin", "counselor");
+ * ```
+ */
+export async function requireAuth(
+  request: NextRequest,
+  ...allowedRoles: UserRole[]
+): Promise<AuthContext> {
+  // First, authenticate the user
+  const auth = await getAuthContext();
+
+  // If no role restrictions, any authenticated user is allowed
+  if (allowedRoles.length === 0) {
+    return auth;
+  }
+
+  // Check if user's role is in the allowed roles
+  if (!allowedRoles.includes(auth.role as UserRole)) {
+    const roleList = allowedRoles.length === 1
+      ? allowedRoles[0]
+      : allowedRoles.join(" or ");
+    throw APIError.forbidden(
+      `Access denied. Required role: ${roleList}`
+    );
+  }
+
+  return auth;
 }

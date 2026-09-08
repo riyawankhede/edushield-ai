@@ -358,10 +358,16 @@ export class AdminService {
    * User Management: Soft Delete User
    * CRITICAL SECURITY RULE: The seeded Root Admin account CANNOT be deleted!
    */
-  static async deleteUser(targetUserId: string, adminUserId: string) {
+  static async deleteUser(targetUserId: string, adminUserId: string, adminSchoolId?: string) {
     await connectDB();
 
-    const targetUser = await User.findById(targetUserId);
+    // Build query with optional school isolation
+    const query: { _id: string; schoolId?: string } = { _id: targetUserId };
+    if (adminSchoolId) {
+      query.schoolId = adminSchoolId;
+    }
+
+    const targetUser = await User.findOne(query);
     if (!targetUser) throw APIError.notFound(`User '${targetUserId}' not found.`);
 
     // CRITICAL GUARD: Never allow deleting an admin user!
