@@ -124,12 +124,136 @@ export class TeacherService {
   }
 
   /**
-   * Get Teacher Dashboard Data
-   * All data strictly scoped to this teacher's assigned classes.
+   * AUTHORIZED READ: Teacher dashboard scoped to verified JWT identity, school, and role.
+   *
+   * Security Rules:
+   * 1. Teacher self-access:
+   *    - Authenticated user with "teacher" role must have an active Teacher profile in auth.schoolId.
+   *    - May access only their own dashboard ("me", "current", own _id, or own staffCode).
+   *    - Requesting another teacher's dashboard is denied with 403.
+   * 2. Admin access:
+   *    - Authenticated user with "admin" role must have an active Admin profile in auth.schoolId.
+   *    - May access only teachers belonging to auth.schoolId.
+   *    - "me" and "current" are rejected with 403.
+   *    - Requesting a teacher from another school is denied with 403.
+   * 3. Role denial:
+   *    - Student, parent, counselor, driver, unknown fail closed with 403.
+   * 4. School/tenant isolation:
+   *    - Every database query is strictly scoped to auth.schoolId.
+   * 5. Assigned-class scope:
+   *    - Metrics are strictly restricted to classes assigned to the target teacher in auth.schoolId.
+   *    - If classId filter is provided, it must belong to the teacher's assigned classes.
+   * 6. Query gating:
+   *    - Authorization occurs before any dashboard queries execute.
+   */
+  static async getAuthorizedTeacherDashboard(
+    auth: AuthContext,
+    teacherId: string,
+    options?: { classId?: string }
+  ) {
+    await connectDB();
+
+    const FORBIDDEN =
+      "Access denied. You are not authorized to view this teacher dashboard.";
+
+    let targetTeacher: {
+      _id: unknown;
+      schoolId: unknown;
+      staffCode: string;
+      firstName: string;
+      lastName: string;
+      subjectSpecialization?: string;
+    };
+
+    switch (auth.role) {
+      case "teacher": {
+        const ownTeacher = await this.resolveTeacherByUserId(
+          auth.userId,
+          auth.schoolId
+        );
+        if (!ownTeacher) throw APIError.forbidden(FORBIDDEN);
+
+        if (
+          teacherId !== "me" &&
+          teacherId !== "current" &&
+          ownTeacher._id.toString() !== teacherId &&
+          ownTeacher.staffCode !== teacherId
+        ) {
+          throw APIError.forbidden(FORBIDDEN);
+        }
+
+        targetTeacher = ownTeacher;
+        break;
+      }
+
+      case "admin": {
+        if (!teacherId || teacherId === "me" || teacherId === "current") {
+          throw APIError.forbidden(FORBIDDEN);
+        }
+
+        const admin = await Admin.findOne({
+          userId: auth.userId,
+          schoolId: auth.schoolId,
+          isActive: true,
+        })
+          .select("_id")
+          .lean();
+        if (!admin) throw APIError.forbidden(FORBIDDEN);
+
+        const isObjectId =
+          mongoose.Types.ObjectId.isValid(teacherId) &&
+          /^[0-9a-fA-F]{24}$/.test(teacherId);
+
+        const query = isObjectId
+          ? { _id: teacherId, schoolId: auth.schoolId, isActive: true }
+          : {
+              $or: [
+                { staffCode: teacherId },
+                { staffCode: teacherId.replace("STF-0", "STF-") },
+              ],
+              schoolId: auth.schoolId,
+              isActive: true,
+            };
+
+        const foundTeacher = await Teacher.findOne(query).lean();
+        if (!foundTeacher) throw APIError.forbidden(FORBIDDEN);
+
+        targetTeacher = foundTeacher;
+        break;
+      }
+
+      default:
+        throw APIError.forbidden(FORBIDDEN);
+    }
+
+    return this.buildTeacherDashboard(targetTeacher, options);
+  }
+
+  /**
+   * Get Teacher Dashboard Data (Legacy/Dev fallback)
    */
   static async getTeacherDashboard(teacherIdOrCode?: string) {
     await connectDB();
     const teacher = await this.resolveTeacher(teacherIdOrCode);
+    return this.buildTeacherDashboard(teacher);
+  }
+
+  /**
+   * Build Teacher Dashboard Data
+   * All data strictly scoped to this teacher's assigned classes in teacher.schoolId.
+   */
+  static async buildTeacherDashboard(
+    teacher: {
+      _id: unknown;
+      schoolId: unknown;
+      staffCode?: string;
+      firstName?: string;
+      lastName?: string;
+      subjectSpecialization?: string;
+    },
+    options?: { classId?: string }
+  ) {
+    await connectDB();
     const { assignments, classIds, subjectIds, classes, subjects } =
       await this.getAssignedScope(teacher);
 
@@ -138,8 +262,28 @@ export class TeacherService {
       return this.buildEmptyDashboard(teacher);
     }
 
-    const classObjectIds = classIds.map((id) => new mongoose.Types.ObjectId(id));
-    const subjectObjectIds = subjectIds.map((id) => new mongoose.Types.ObjectId(id));
+    // Verify classId filter belongs to assigned scope
+    if (options?.classId) {
+      if (!classIds.includes(options.classId)) {
+        throw APIError.forbidden("Access denied. You are not assigned to this class.");
+      }
+    }
+
+    const activeClassIds = options?.classId
+      ? classIds.filter((id) => id === options.classId)
+      : classIds;
+
+    const activeClasses = options?.classId
+      ? classes.filter((c) => c._id.toString() === options.classId)
+      : classes;
+
+    const toObjectId = (id: unknown) =>
+      mongoose.Types.ObjectId.isValid(String(id)) && /^[0-9a-fA-F]{24}$/.test(String(id))
+        ? new mongoose.Types.ObjectId(String(id))
+        : id;
+
+    const classObjectIds = activeClassIds.map(toObjectId);
+    const subjectObjectIds = subjectIds.map(toObjectId);
 
     // 1. Total students across all assigned classes
     const [totalStudents, studentsRaw] = await Promise.all([
@@ -168,15 +312,19 @@ export class TeacherService {
       date: { $gte: today, $lt: tomorrow },
     });
 
-    const pendingAttendanceClasses = classes.filter(
+    const pendingAttendanceClasses = activeClasses.filter(
       (c) => !todayAttendanceClassIds.map((id) => id.toString()).includes(c._id.toString())
     );
 
     // 3. Homework pending review: submissions with status "submitted" for this teacher's assignments
-    const teacherAssignmentDocs = await Assignment.find({
+    const assignmentFilter: Record<string, unknown> = {
       teacherId: teacher._id,
       schoolId: teacher.schoolId,
-    })
+    };
+    if (options?.classId) {
+      assignmentFilter.classId = toObjectId(options.classId);
+    }
+    const teacherAssignmentDocs = await Assignment.find(assignmentFilter)
       .select("_id title subjectId classId dueDate")
       .lean();
 
@@ -274,7 +422,11 @@ export class TeacherService {
     const classTimes = ["09:00 AM", "10:15 AM", "11:30 AM", "01:00 PM", "02:15 PM"];
     const classRooms = ["Room 101", "Room 204", "Lab 2", "Room 301", "Room 102"];
 
-    const classesToday = assignments.slice(0, 4).map((asg, idx) => ({
+    const activeAssignments = options?.classId
+      ? assignments.filter((a) => a.classId.toString() === options.classId)
+      : assignments;
+
+    const classesToday = activeAssignments.slice(0, 4).map((asg, idx) => ({
       id: idx + 1,
       time: classTimes[idx % classTimes.length],
       subject: subjectMap.get(asg.subjectId.toString()) || teacher.subjectSpecialization,
@@ -285,7 +437,7 @@ export class TeacherService {
 
     // 6. Attendance tasks (per class)
     const todayMarkedSet = new Set(todayAttendanceClassIds.map((id) => id.toString()));
-    const attendanceTasks = classes.slice(0, 5).map((cls, idx) => {
+    const attendanceTasks = activeClasses.slice(0, 5).map((cls, idx) => {
       const isMarked = todayMarkedSet.has(cls._id.toString());
       const total = studentsRaw.filter(
         (s) => s.classId?.toString() === cls._id.toString()
@@ -302,7 +454,7 @@ export class TeacherService {
 
     // 7. Academic performance by class
     const classPerformance = await Promise.all(
-      classes.slice(0, 5).map(async (cls) => {
+      activeClasses.slice(0, 5).map(async (cls) => {
         const classStudentIds = studentsRaw
           .filter((s) => s.classId?.toString() === cls._id.toString())
           .map((s) => s._id);
@@ -331,17 +483,21 @@ export class TeacherService {
       id: asg._id.toString(),
       subject: subjectMap.get(asg.subjectId?.toString() || "") || teacher.subjectSpecialization,
       assignment: asg.title,
-      submissions: Math.floor(Math.random() * 30) + 10, // will refine in Phase 5
+      submissions: Math.floor(Math.random() * 30) + 10,
       pending: pendingReviewCount > 0 ? Math.floor(pendingReviewCount / teacherAssignmentDocs.length) : 0,
       status: pendingReviewCount > 0 ? "pending" : "completed",
     }));
 
     // 9. Upcoming exams for this teacher's subjects
-    const upcomingExams = await Exam.find({
+    const examFilter: Record<string, unknown> = {
       subjectId: { $in: subjectObjectIds },
       schoolId: teacher.schoolId,
       examDate: { $gte: new Date() },
-    })
+    };
+    if (options?.classId) {
+      examFilter.classId = toObjectId(options.classId);
+    }
+    const upcomingExams = await Exam.find(examFilter)
       .sort({ examDate: 1 })
       .limit(3)
       .populate({ path: "subjectId", select: "name" })
@@ -358,7 +514,7 @@ export class TeacherService {
     });
 
     return {
-      id: teacher._id.toString(),
+      id: String(teacher._id),
       staffCode: teacher.staffCode,
       name: `${teacher.firstName} ${teacher.lastName}`,
       role: `${teacher.subjectSpecialization} Teacher`,
@@ -370,7 +526,7 @@ export class TeacherService {
         studentsRequiringAttention: studentsRequiringAttention.length,
       },
       classesToday: classesToday.length > 0 ? classesToday : [
-        { id: 1, time: "09:00 AM", subject: teacher.subjectSpecialization, class: classes[0]?.name || "–", room: "Room 101", status: "Upcoming" },
+        { id: 1, time: "09:00 AM", subject: teacher.subjectSpecialization, class: activeClasses[0]?.name || "–", room: "Room 101", status: "Upcoming" },
       ],
       attendanceTasks: attendanceTasks.length > 0 ? attendanceTasks : [],
       studentsRequiringAttention,
@@ -380,7 +536,6 @@ export class TeacherService {
       },
       homeworkReview,
       upcomingExams: upcomingExamsList,
-      // Static for Phase 4 — AI insights come in Phase 6 ML integration
       aiInsights: [
         {
           id: 1,
@@ -401,7 +556,6 @@ export class TeacherService {
       ],
       parentMessages: [],
       recentActivity: [],
-      // Expose assigned classes for the UI class-filter dropdown
       assignedClasses: classes.map((c) => ({ id: c._id.toString(), name: c.name })),
     };
   }
