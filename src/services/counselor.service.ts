@@ -2,6 +2,7 @@ import { connectDB } from "@/lib/db";
 import { APIError } from "@/lib/api-error";
 import {
   Counselor,
+  Admin,
   SafetyReport,
   SafetyIncident,
   MoodCheckin,
@@ -9,6 +10,7 @@ import {
   AttendanceRecord,
   ExamResult,
 } from "@/models";
+import type { AuthContext } from "@/lib/auth";
 import mongoose from "mongoose";
 
 export class CounselorService {
@@ -286,6 +288,108 @@ export class CounselorService {
     ]);
 
     // 2. Mandatory response serializer enforcing anonymity rules
+    const serializedReports = reports.map((report) => {
+      // If anonymous, NEVER return reporterStudentId!
+      const reporter = report.isAnonymous ? undefined : report.reporterStudentId;
+
+      return {
+        _id: report._id.toString(),
+        schoolId: report.schoolId.toString(),
+        reportType: report.reportType,
+        description: report.description,
+        locationDescription: report.locationDescription,
+        status: report.status,
+        isAnonymous: report.isAnonymous,
+        nlpSignals: report.nlpSignals,
+        reporterStudent: reporter,
+        createdAt: report.createdAt,
+        updatedAt: report.updatedAt,
+      };
+    });
+
+    return {
+      reports: serializedReports,
+      meta: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
+  }
+
+  /**
+   * AUTHORIZED READ: Safety Reports
+   *
+   * SECURITY RULES:
+   * 1. JWT AUTH & ROLE: Only active counselors and administrators in auth.schoolId can view safety reports.
+   *    - counselor: verified active Counselor document matching { userId: auth.userId, schoolId: auth.schoolId, isActive: true }
+   *    - admin: verified active Admin document matching { userId: auth.userId, schoolId: auth.schoolId, isActive: true }
+   *    - all other roles (student, parent, teacher, unknown): 403 Forbidden.
+   * 2. TENANT ISOLATION: Scoped strictly to { schoolId: auth.schoolId }.
+   * 3. ANONYMITY SHIELD: When report.isAnonymous === true, reporterStudentId and reporterStudent are completely stripped.
+   */
+  static async getAuthorizedSafetyReports(
+    auth: AuthContext,
+    options: { page?: number; pageSize?: number; status?: string }
+  ) {
+    await connectDB();
+
+    const denied = () =>
+      APIError.forbidden(
+        "Access denied. Only counselors and administrators are permitted to view safety reports."
+      );
+
+    if (auth.role === "counselor") {
+      const counselor = await Counselor.findOne({
+        userId: auth.userId,
+        schoolId: auth.schoolId,
+        isActive: true,
+      })
+        .select("_id")
+        .lean();
+
+      if (!counselor) throw denied();
+    } else if (auth.role === "admin") {
+      const admin = await Admin.findOne({
+        userId: auth.userId,
+        schoolId: auth.schoolId,
+        isActive: true,
+      })
+        .select("_id")
+        .lean();
+
+      if (!admin) throw denied();
+    } else {
+      // student, parent, teacher, and any other role fail closed
+      throw denied();
+    }
+
+    const page = Math.max(1, Number(options.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(options.pageSize) || 20));
+    const skip = (page - 1) * pageSize;
+
+    const filter: Record<string, unknown> = {
+      schoolId: auth.schoolId,
+    };
+    if (options.status) {
+      filter.status = options.status;
+    }
+
+    const [reports, total] = await Promise.all([
+      SafetyReport.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize)
+        .populate({
+          path: "reporterStudentId",
+          select: "firstName lastName studentCode grade section",
+        })
+        .lean(),
+      SafetyReport.countDocuments(filter),
+    ]);
+
+    // Mandatory response serializer enforcing anonymity rules
     const serializedReports = reports.map((report) => {
       // If anonymous, NEVER return reporterStudentId!
       const reporter = report.isAnonymous ? undefined : report.reporterStudentId;

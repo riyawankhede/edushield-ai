@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { SafetyReport } from "@/models";
 import { CounselorService } from "@/services/counselor.service";
+import { requireAuth } from "@/lib/auth";
 import { apiSuccess } from "@/lib/api-response";
 import { handleAPIError, APIError } from "@/lib/api-error";
 
@@ -9,31 +10,24 @@ import { handleAPIError, APIError } from "@/lib/api-error";
  * GET /api/v1/safety/reports
  *
  * CRITICAL SECURITY BOUNDARY (docs/SECURITY_MODEL.md & docs/AUTHORIZATION_MATRIX.md):
- * 1. SERVER-SIDE ROLE CHECK: This check lives directly in this route handler.
- *    Only users with role "counselor" or "admin" may query safety reports.
- *    Any request with missing or other role (e.g. student, parent, teacher) is REJECTED with 403 Forbidden!
+ * 1. SERVER-SIDE ROLE CHECK & JWT AUTHENTICATION:
+ *    Only active counselors and administrators in the authenticated school may view safety reports.
+ *    Any request with missing, invalid, or unauthorized role is REJECTED with 403 Forbidden!
  * 2. ANONYMITY SHIELD: Even for counselors and admins, if isAnonymous === true,
  *    the reporter's identity is permanently stripped from the response!
+ * 3. TENANT ISOLATION: Scoped strictly to auth.schoolId.
  */
 export async function GET(request: NextRequest) {
   try {
-    // 1. Mandatory server-side role check from header or query context
-    const role =
-      request.headers.get("x-user-role") ||
-      new URL(request.url).searchParams.get("role");
-
-    if (!role || (role !== "counselor" && role !== "admin")) {
-      throw APIError.forbidden(
-        "Access denied. Only counselors and administrators are permitted to view safety reports."
-      );
-    }
+    const auth = await requireAuth(request);
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const pageSize = Math.min(100, parseInt(searchParams.get("pageSize") || "20", 10));
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+    const rawPageSize = parseInt(searchParams.get("pageSize") || "20", 10) || 20;
+    const pageSize = Math.min(100, Math.max(1, rawPageSize));
     const status = searchParams.get("status") || undefined;
 
-    const result = await CounselorService.getSafetyReports(role, {
+    const result = await CounselorService.getAuthorizedSafetyReports(auth, {
       page,
       pageSize,
       status,
