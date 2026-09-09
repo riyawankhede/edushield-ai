@@ -20,11 +20,29 @@ import {
 } from "@/models";
 import { TeacherService } from "@/services/teacher.service";
 import type { AuthContext } from "@/lib/auth";
+import type { PaginationMeta } from "@/lib/api-response";
 import mongoose from "mongoose";
 
 export interface PaginationParams {
   page?: number;
   pageSize?: number;
+}
+
+export interface StudentDirectoryOptions {
+  page: number;
+  pageSize: number;
+  grade?: string;
+  section?: string;
+  search?: string;
+}
+
+export interface AuthorizedStudentDirectory {
+  students: unknown[];
+  meta: PaginationMeta;
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export class StudentService {
@@ -126,6 +144,75 @@ export class StudentService {
       ? await Class.findOne({ _id: student.classId, schoolId: auth.schoolId }).lean()
       : null;
     return { ...student, classInfo };
+  }
+
+  /**
+   * AUTHORIZED READ: school-scoped student directory for active admins only.
+   * JWT claims establish the tenant; pagination and filters scope the results.
+   */
+  static async getAuthorizedStudentDirectory(
+    auth: AuthContext,
+    options: StudentDirectoryOptions
+  ): Promise<AuthorizedStudentDirectory> {
+    const FORBIDDEN =
+      "Access denied. You are not authorized to view this student directory.";
+
+    if (auth.role !== "admin") {
+      throw APIError.forbidden(FORBIDDEN);
+    }
+
+    await connectDB();
+
+    const admin = await Admin.findOne({
+      userId: auth.userId,
+      schoolId: auth.schoolId,
+      isActive: true,
+    })
+      .select("_id")
+      .lean();
+    if (!admin) throw APIError.forbidden(FORBIDDEN);
+
+    const page = Math.max(1, Number(options.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(options.pageSize) || 20));
+    const skip = (page - 1) * pageSize;
+
+    const filter: Record<string, unknown> = {
+      schoolId: auth.schoolId,
+      isActive: true,
+    };
+
+    if (options.grade) filter.grade = options.grade;
+    if (options.section) filter.section = options.section;
+    if (options.search && options.search.trim()) {
+      const safeSearch = escapeRegex(options.search.trim());
+      filter.$or = [
+        { firstName: { $regex: safeSearch, $options: "i" } },
+        { lastName: { $regex: safeSearch, $options: "i" } },
+        { studentCode: { $regex: safeSearch, $options: "i" } },
+      ];
+    }
+
+    const [students, total] = await Promise.all([
+      Student.find(filter)
+        .select(
+          "_id studentCode firstName lastName gender grade section classId enrollmentDate isActive profileImageUrl schoolId createdAt updatedAt"
+        )
+        .sort({ studentCode: 1 })
+        .skip(skip)
+        .limit(pageSize)
+        .lean(),
+      Student.countDocuments(filter),
+    ]);
+
+    return {
+      students,
+      meta: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
   }
 
   /**
