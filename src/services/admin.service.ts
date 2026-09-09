@@ -1,6 +1,8 @@
 import { connectDB } from "@/lib/db";
 import { APIError } from "@/lib/api-error";
+import { AuthContext } from "@/lib/auth";
 import {
+  Admin,
   School,
   Student,
   Teacher,
@@ -9,7 +11,6 @@ import {
   User,
   Bus,
   AttendanceRecord,
-  ExamResult,
   SafetyReport,
   EmergencyAlert,
   AuditLog,
@@ -68,35 +69,78 @@ export class AdminService {
   }
 
   /**
-   * Get Executive Admin Dashboard Data
+   * Get Authorized Admin Dashboard Data
+   *
+   * Enforces:
+   * 1. Authenticated user has "admin" role
+   * 2. Active Admin profile exists for (userId, schoolId)
+   * 3. All dashboard metrics & queries are strictly scoped to auth.schoolId
    */
-  static async getAdminDashboard() {
+  static async getAuthorizedAdminDashboard(auth: AuthContext) {
     await connectDB();
 
+    if (!auth || auth.role !== "admin") {
+      throw APIError.forbidden("Access denied. Administrator privileges required.");
+    }
+
+    const admin = await Admin.findOne({
+      userId: auth.userId,
+      schoolId: auth.schoolId,
+      isActive: true,
+    }).lean();
+
+    if (!admin) {
+      throw APIError.forbidden("Access denied. Active administrator profile required.");
+    }
+
+    return this.getAdminDashboard(auth.schoolId, admin);
+  }
+
+  /**
+   * Get Executive Admin Dashboard Data
+   */
+  static async getAdminDashboard(
+    schoolId?: string,
+    admin?: { firstName?: string; lastName?: string } | null
+  ) {
+    await connectDB();
+
+    const schoolFilter = schoolId ? { schoolId } : {};
+    const schoolActiveFilter = schoolId ? { schoolId, isActive: true } : { isActive: true };
+
     const [
+      school,
       studentCount,
       teacherCount,
-      parentCount,
-      counselorCount,
+      ,
+      ,
       busCount,
       safetyReportCount,
       openSafetyReports,
     ] = await Promise.all([
-      Student.countDocuments({ isActive: true }),
-      Teacher.countDocuments({ isActive: true }),
-      Parent.countDocuments({ isActive: true }),
-      Counselor.countDocuments({ isActive: true }),
-      Bus.countDocuments({ isActive: true }),
-      SafetyReport.countDocuments(),
-      SafetyReport.countDocuments({ status: { $ne: "resolved" } }),
+      schoolId ? School.findById(schoolId).lean() : School.findOne({ isActive: true }).lean(),
+      Student.countDocuments(schoolActiveFilter),
+      Teacher.countDocuments(schoolActiveFilter),
+      Parent.countDocuments(schoolActiveFilter),
+      Counselor.countDocuments(schoolActiveFilter),
+      Bus.countDocuments(schoolActiveFilter),
+      SafetyReport.countDocuments(schoolFilter),
+      SafetyReport.countDocuments({ ...schoolFilter, status: { $ne: "resolved" } }),
     ]);
 
     // Compute Overall Attendance Rate (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+    const matchStage: Record<string, unknown> = {
+      date: { $gte: thirtyDaysAgo },
+    };
+    if (schoolId) {
+      matchStage.schoolId = schoolId;
+    }
+
     const attendanceAgg = await AttendanceRecord.aggregate([
-      { $match: { date: { $gte: thirtyDaysAgo } } },
+      { $match: matchStage },
       {
         $group: {
           _id: null,
@@ -153,7 +197,8 @@ export class AdminService {
     ];
 
     // Transport Fleet Data
-    const buses = await Bus.find().limit(4).lean();
+    const busQuery = schoolId ? { schoolId } : {};
+    const buses = await Bus.find(busQuery).limit(4).lean();
     const transportData = buses.map((b, idx) => ({
       id: `Route 0${idx + 1} (${b.registrationNumber})`,
       status: b.isActive ? "On Route" : "In Maintenance",
@@ -167,10 +212,15 @@ export class AdminService {
       );
     }
 
+    const principalName =
+      admin?.firstName && admin?.lastName
+        ? `Principal ${admin.firstName} ${admin.lastName}`.trim()
+        : "Principal Rajesh Mehta";
+
     return {
-      name: "Principal Rajesh Mehta",
-      schoolName: "Delhi Public Senior Secondary School",
-      academicYear: "2026–27",
+      name: principalName,
+      schoolName: school?.name || "Delhi Public Senior Secondary School",
+      academicYear: school?.academicYearCurrent || "2026–27",
       kpis: [
         {
           title: "Total Students",
