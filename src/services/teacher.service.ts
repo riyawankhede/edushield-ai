@@ -46,6 +46,25 @@ export class TeacherService {
   }
 
   /**
+   * Resolve an ACTIVE teacher by authenticated User identity + school.
+   *
+   * JWT-aware, school-scoped resolver used by protected write routes.
+   * Explicitly does NOT use the "me"/first-active-teacher fallback.
+   *
+   * @param userId   - authenticated User _id (auth.userId from JWT)
+   * @param schoolId - authenticated User schoolId (auth.schoolId from JWT)
+   * @returns teacher document (lean) or null when no active teacher matches
+   */
+  static async resolveTeacherByUserId(userId: string, schoolId: string) {
+    await connectDB();
+    return Teacher.findOne({
+      userId,
+      schoolId,
+      isActive: true,
+    }).lean();
+  }
+
+  /**
    * DATA ISOLATION: Resolve only the classes/subjects this teacher is assigned to.
    *
    * Strict isolation query — two conditions required:

@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
-import { AttendanceRecord } from "@/models";
+import { AttendanceRecord, Student } from "@/models";
 import { TeacherService } from "@/services/teacher.service";
+import { requireAuth } from "@/lib/auth";
 import { apiSuccess } from "@/lib/api-response";
 import { handleAPIError, APIError } from "@/lib/api-error";
 
@@ -50,27 +51,54 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/v1/attendance
  * WRITE OPERATION: Teacher marks attendance
- * WRITE-GUARD: Explicitly verifies teacher is assigned to this class before writing!
+ * SECURITY: Authenticated teacher only (JWT). WRITE-GUARD: teacher must be
+ * assigned to this class before writing. Student must belong to the
+ * authenticated school AND the requested class.
  */
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
+
+    // 1. AUTHENTICATION: Teacher identity MUST come from the verified JWT.
+    // Client-supplied teacherId / x-user-id / x-user-role are NEVER trusted.
+    const auth = await requireAuth(request, "teacher");
+
     const body = await request.json();
 
-    const { teacherId, classId, studentId, date, status, remarks } = body;
+    const { classId, studentId, date, status, remarks } = body;
 
     if (!classId || !studentId || !status) {
       throw APIError.validationError("Missing required fields: classId, studentId, and status are required.");
     }
 
-    // 1. Resolve teacher (uses teacherId from body, or "me" for demo)
-    const teacher = await TeacherService.resolveTeacher(teacherId || "me");
+    // 2. AUTHENTICATED TEACHER: Resolve the teacher profile via JWT userId + schoolId.
+    // Does NOT use the "me"/first-teacher fallback. body.teacherId cannot override.
+    const teacher = await TeacherService.resolveTeacherByUserId(auth.userId, auth.schoolId);
+    if (!teacher) {
+      throw APIError.notFound("Authenticated teacher profile not found.");
+    }
 
-    // 2. CRITICAL WRITE-GUARD: Verify teacher is assigned to this class!
+    // 3. CRITICAL WRITE-GUARD: Verify teacher is assigned to this class!
     // Throws 403 FORBIDDEN if teacher is not assigned to this class.
     await TeacherService.verifyAssignment(teacher, classId);
 
-    // 3. Upsert attendance record for this student and date
+    // 4. STUDENT MEMBERSHIP: The student must belong to the authenticated
+    // school AND to the requested class. Prevents cross-school/cross-class
+    // data pollution (e.g. School A teacher + School B student).
+    const student = await Student.findOne({
+      _id: studentId,
+      schoolId: auth.schoolId,
+      classId,
+      isActive: true,
+    })
+      .select("_id")
+      .lean();
+
+    if (!student) {
+      throw APIError.notFound("Student not found in this class.");
+    }
+
+    // 5. Upsert attendance record for this student and date
     const recordDate = date ? new Date(date) : new Date();
     recordDate.setHours(0, 0, 0, 0);
 
@@ -79,7 +107,7 @@ export async function POST(request: NextRequest) {
         studentId,
         classId,
         date: recordDate,
-        schoolId: teacher.schoolId,
+        schoolId: auth.schoolId,
       },
       {
         studentId,
@@ -87,8 +115,8 @@ export async function POST(request: NextRequest) {
         date: recordDate,
         status,
         remarks: remarks || "",
-        recordedBy: teacher.userId || teacher._id,
-        schoolId: teacher.schoolId,
+        recordedBy: auth.userId,
+        schoolId: auth.schoolId,
       },
       { upsert: true, new: true }
     );

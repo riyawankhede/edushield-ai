@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
-import { Exam, ExamResult } from "@/models";
+import { Exam, ExamResult, Student } from "@/models";
 import { TeacherService } from "@/services/teacher.service";
+import { requireAuth } from "@/lib/auth";
 import { apiSuccess } from "@/lib/api-response";
 import { handleAPIError, APIError } from "@/lib/api-error";
 
@@ -43,7 +44,9 @@ export async function GET(
 /**
  * POST /api/v1/exams/:examId/results
  * WRITE OPERATION: Teacher enters exam marks
- * WRITE-GUARD: Explicitly verifies teacher is assigned to this exam's class AND subject before writing!
+ * SECURITY: Authenticated teacher only (JWT). WRITE-GUARD: teacher must be
+ * assigned to the exam's class AND subject. Exam and student must belong to
+ * the authenticated school.
  */
 export async function POST(
   request: NextRequest,
@@ -52,24 +55,37 @@ export async function POST(
   try {
     await connectDB();
     const params = await props.params;
+
+    // 1. AUTHENTICATION: Teacher identity MUST come from the verified JWT.
+    // Client-supplied teacherId / x-user-id / x-user-role are NEVER trusted.
+    const auth = await requireAuth(request, "teacher");
+
     const body = await request.json();
 
-    const { teacherId, studentId, marksObtained, remarks } = body;
+    const { studentId, marksObtained, remarks } = body;
 
     if (!studentId || marksObtained === undefined) {
       throw APIError.validationError("Missing required fields: studentId and marksObtained are required.");
     }
 
-    // 1. Fetch the exam to determine its assigned class and subject
-    const exam = await Exam.findById(params.examId).lean();
+    // 2. AUTHENTICATED TEACHER: Resolve the teacher profile via JWT userId + schoolId.
+    // Does NOT use the "me"/first-teacher fallback. body.teacherId cannot override.
+    const teacher = await TeacherService.resolveTeacherByUserId(auth.userId, auth.schoolId);
+    if (!teacher) {
+      throw APIError.notFound("Authenticated teacher profile not found.");
+    }
+
+    // 3. School-scoped exam lookup: the exam MUST belong to the authenticated
+    // teacher's school. Cross-school exam access returns NOT_FOUND.
+    const exam = await Exam.findOne({
+      _id: params.examId,
+      schoolId: auth.schoolId,
+    }).lean();
     if (!exam) {
       throw APIError.notFound(`Exam '${params.examId}' not found.`);
     }
 
-    // 2. Resolve teacher
-    const teacher = await TeacherService.resolveTeacher(teacherId || "me");
-
-    // 3. CRITICAL WRITE-GUARD: Verify teacher is assigned to this exam's class AND subject!
+    // 4. CRITICAL WRITE-GUARD: Verify teacher is assigned to this exam's class AND subject!
     // Throws 403 FORBIDDEN if teacher is not assigned to this class and subject.
     await TeacherService.verifyAssignment(
       teacher,
@@ -77,7 +93,23 @@ export async function POST(
       exam.subjectId.toString()
     );
 
-    // 4. Determine pass/fail & grade
+    // 5. STUDENT MEMBERSHIP: The student must belong to the authenticated
+    // school AND to the exam's class. Prevents cross-school/cross-class
+    // data pollution (e.g. School A teacher + School B student).
+    const student = await Student.findOne({
+      _id: studentId,
+      schoolId: auth.schoolId,
+      classId: exam.classId,
+      isActive: true,
+    })
+      .select("_id")
+      .lean();
+
+    if (!student) {
+      throw APIError.notFound("Student not found in this class.");
+    }
+
+    // 6. Determine pass/fail & grade
     const isPassed = marksObtained >= exam.passingMarks;
     const grade =
       marksObtained >= 22 ? "A" :
@@ -98,8 +130,8 @@ export async function POST(
         grade,
         isPassed,
         remarks: remarks || "",
-        enteredBy: teacher.userId || teacher._id,
-        schoolId: exam.schoolId,
+        enteredBy: auth.userId,
+        schoolId: auth.schoolId,
       },
       { upsert: true, new: true }
     );
