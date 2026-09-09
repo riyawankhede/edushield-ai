@@ -196,6 +196,29 @@ export class ParentService {
   }
 
   /**
+   * AUTHORIZED READ: parent dashboard scoped to the verified JWT identity.
+   *
+   * Authorization is delegated to getAuthorizedLinkedChildren() so the
+   * dashboard follows the exact same parent/admin role and school-isolation
+   * rules as the protected children endpoint. The existing dashboard method
+   * remains unchanged for its current server-component caller; it receives
+   * only the canonical parent ID returned after authorization, never the URL
+   * parentId supplied by the caller.
+   */
+  static async getAuthorizedParentDashboard(
+    auth: AuthContext,
+    parentId: string,
+    requestedStudentId?: string
+  ) {
+    const { parent } = await this.getAuthorizedLinkedChildren(auth, parentId);
+
+    return this.getParentDashboard(
+      parent._id.toString(),
+      requestedStudentId
+    );
+  }
+
+  /**
    * Get Parent Dashboard Data
    * Scoped strictly to the parent's linked children
    */
