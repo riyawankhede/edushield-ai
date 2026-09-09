@@ -11,7 +11,9 @@ import {
   Assignment,
   ExamResult,
   Exam,
+  Admin,
 } from "@/models";
+import type { AuthContext } from "@/lib/auth";
 import mongoose from "mongoose";
 
 export class TeacherService {
@@ -428,6 +430,177 @@ export class TeacherService {
       parentMessages: [],
       recentActivity: [],
       assignedClasses: [],
+    };
+  }
+
+  /**
+   * AUTHORIZED READ: Teacher student directory scoped to verified JWT identity and school.
+   *
+   * Rules:
+   * - teacher : own assigned students only — Teacher profile resolved via
+   *             { userId: auth.userId, schoolId: auth.schoolId, isActive: true }.
+   *             URL teacherId must be "me", "current", or match the own teacher's
+   *             _id or staffCode. Access to other teachers' rosters is strictly denied (403).
+   * - admin   : active Admin profile required; target teacher resolved with
+   *             { _id or staffCode, schoolId: auth.schoolId, isActive: true }.
+   *             "me"/"current" rejected for admin.
+   * - student / parent / counselor / unknown : fail closed with 403 Forbidden.
+   *
+   * Data is strictly scoped to classes assigned to the resolved teacher in auth.schoolId.
+   */
+  static async getAuthorizedTeacherStudents(
+    auth: AuthContext,
+    teacherId: string,
+    options: {
+      page?: number;
+      pageSize?: number;
+      classId?: string;
+    }
+  ) {
+    await connectDB();
+
+    const FORBIDDEN =
+      "Access denied. You are not authorized to view this student directory.";
+
+    let targetTeacher: {
+      _id: unknown;
+      schoolId: unknown;
+      staffCode: string;
+    };
+
+    switch (auth.role) {
+      case "teacher": {
+        const ownTeacher = await this.resolveTeacherByUserId(
+          auth.userId,
+          auth.schoolId
+        );
+        if (!ownTeacher) throw APIError.forbidden(FORBIDDEN);
+
+        if (
+          teacherId !== "me" &&
+          teacherId !== "current" &&
+          ownTeacher._id.toString() !== teacherId &&
+          ownTeacher.staffCode !== teacherId
+        ) {
+          throw APIError.forbidden(FORBIDDEN);
+        }
+
+        targetTeacher = ownTeacher;
+        break;
+      }
+
+      case "admin": {
+        if (!teacherId || teacherId === "me" || teacherId === "current") {
+          throw APIError.forbidden(FORBIDDEN);
+        }
+
+        const admin = await Admin.findOne({
+          userId: auth.userId,
+          schoolId: auth.schoolId,
+          isActive: true,
+        })
+          .select("_id")
+          .lean();
+        if (!admin) throw APIError.forbidden(FORBIDDEN);
+
+        const isObjectId =
+          mongoose.Types.ObjectId.isValid(teacherId) &&
+          /^[0-9a-fA-F]{24}$/.test(teacherId);
+
+        const query = isObjectId
+          ? { _id: teacherId, schoolId: auth.schoolId, isActive: true }
+          : {
+              $or: [
+                { staffCode: teacherId },
+                { staffCode: teacherId.replace("STF-0", "STF-") },
+              ],
+              schoolId: auth.schoolId,
+              isActive: true,
+            };
+
+        const foundTeacher = await Teacher.findOne(query).lean();
+        if (!foundTeacher) throw APIError.forbidden(FORBIDDEN);
+
+        targetTeacher = foundTeacher;
+        break;
+      }
+
+      default:
+        // student, parent, counselor, and any unknown role fail closed
+        throw APIError.forbidden(FORBIDDEN);
+    }
+
+    // Resolve classes assigned to target teacher
+    const { classIds, classes } = await this.getAssignedScope(targetTeacher);
+
+    const page = Math.max(1, Number(options.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(options.pageSize) || 20));
+    const skip = (page - 1) * pageSize;
+
+    // Filter by specific classId if requested, ensuring it is within the assigned scope
+    let targetClassIds = classIds;
+    if (options.classId) {
+      if (!classIds.includes(options.classId)) {
+        return {
+          students: [],
+          meta: {
+            page: 1,
+            pageSize,
+            total: 0,
+            totalPages: 0,
+          },
+        };
+      }
+      targetClassIds = [options.classId];
+    }
+
+    if (targetClassIds.length === 0) {
+      return {
+        students: [],
+        meta: {
+          page: 1,
+          pageSize,
+          total: 0,
+          totalPages: 0,
+        },
+      };
+    }
+
+    const classObjectIds = targetClassIds.map((id) => new mongoose.Types.ObjectId(id));
+
+    const studentFilter = {
+      classId: { $in: classObjectIds },
+      schoolId: auth.schoolId,
+      isActive: true,
+    };
+
+    const [students, total] = await Promise.all([
+      Student.find(studentFilter)
+        .select(
+          "_id studentCode firstName lastName gender grade section classId enrollmentDate isActive profileImageUrl schoolId createdAt updatedAt"
+        )
+        .sort({ studentCode: 1 })
+        .skip(skip)
+        .limit(pageSize)
+        .lean(),
+      Student.countDocuments(studentFilter),
+    ]);
+
+    const classMap = new Map(classes.map((c) => [c._id.toString(), c.name]));
+
+    const enriched = students.map((s) => ({
+      ...s,
+      className: classMap.get(s.classId?.toString() || "") || "–",
+    }));
+
+    return {
+      students: enriched,
+      meta: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
     };
   }
 }
