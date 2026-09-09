@@ -54,6 +54,69 @@ export class CounselorService {
   static async getCounselorDashboard(counselorIdOrCode?: string) {
     await connectDB();
     const counselor = await this.resolveCounselor(counselorIdOrCode);
+    return this.buildCounselorDashboard(counselor);
+  }
+
+  /**
+   * AUTHORIZED READ: Counselor Dashboard scoped to verified JWT identity and school.
+   *
+   * Rules:
+   * - counselor : own dashboard only — Counselor profile resolved via
+   *               { userId: auth.userId, schoolId: auth.schoolId, isActive: true }.
+   *               URL counselorId must be "me", "current", or match the own counselor's
+   *               _id or staffCode. Access to other counselors is strictly denied (403).
+   * - admin / teacher / parent / student / unknown : fail closed with 403 Forbidden.
+   *   (Under AUTHORIZATION_MATRIX.md, individual well-being risk factors and
+   *   counseling caseloads are not exposed to other roles).
+   */
+  static async getAuthorizedCounselorDashboard(
+    auth: AuthContext,
+    counselorId?: string
+  ) {
+    await connectDB();
+
+    const FORBIDDEN =
+      "Access denied. You are not authorized to view this counselor dashboard.";
+
+    // Fail-closed for all non-counselor roles
+    if (auth.role !== "counselor") {
+      throw APIError.forbidden(FORBIDDEN);
+    }
+
+    // Resolve own counselor profile strictly by auth.userId + auth.schoolId + isActive: true
+    const ownCounselor = await Counselor.findOne({
+      userId: auth.userId,
+      schoolId: auth.schoolId,
+      isActive: true,
+    }).lean();
+
+    if (!ownCounselor) {
+      throw APIError.forbidden(FORBIDDEN);
+    }
+
+    // If a specific counselorId was passed, it must match this counselor's own ID or staffCode
+    if (counselorId && counselorId !== "me" && counselorId !== "current") {
+      const ownId = ownCounselor._id.toString();
+      const ownStaffCode = ownCounselor.staffCode;
+      if (counselorId !== ownId && counselorId !== ownStaffCode) {
+        throw APIError.forbidden(FORBIDDEN);
+      }
+    }
+
+    return this.buildCounselorDashboard(ownCounselor);
+  }
+
+  /**
+   * Build Counselor Dashboard Data from a verified counselor profile
+   */
+  static async buildCounselorDashboard(counselor: {
+    _id: { toString(): string } | string;
+    schoolId: unknown;
+    staffCode: string;
+    firstName: string;
+    lastName: string;
+  }) {
+    await connectDB();
     const schoolId = counselor.schoolId;
 
     // 1. Safety Reports Metrics & Breakdown
