@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Exam, ExamResult, Student } from "@/models";
 import { TeacherService } from "@/services/teacher.service";
+import { ExamService } from "@/services/exam.service";
 import { requireAuth } from "@/lib/auth";
 import { apiSuccess } from "@/lib/api-response";
 import { handleAPIError, APIError } from "@/lib/api-error";
@@ -11,31 +12,33 @@ export async function GET(
   props: { params: Promise<{ examId: string }> }
 ) {
   try {
-    await connectDB();
+    const auth = await requireAuth(
+      request,
+      "student",
+      "parent",
+      "teacher",
+      "counselor",
+      "admin"
+    );
     const params = await props.params;
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const pageSize = Math.min(100, parseInt(searchParams.get("pageSize") || "50", 10));
+    const studentId = searchParams.get("studentId") || undefined;
+    const classId = searchParams.get("classId") || undefined;
 
-    const skip = (page - 1) * pageSize;
-    const filter = { examId: params.examId };
+    const result = await ExamService.getAuthorizedExamResults(
+      auth,
+      params.examId,
+      {
+        page,
+        pageSize,
+        studentId,
+        classId,
+      }
+    );
 
-    const [results, total] = await Promise.all([
-      ExamResult.find(filter)
-        .sort({ studentId: 1 })
-        .skip(skip)
-        .limit(pageSize)
-        .populate({ path: "studentId", select: "firstName lastName studentCode" })
-        .lean(),
-      ExamResult.countDocuments(filter),
-    ]);
-
-    return apiSuccess(results, {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
-    });
+    return apiSuccess(result.results, result.meta);
   } catch (error) {
     return handleAPIError(error);
   }
