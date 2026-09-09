@@ -13,7 +13,13 @@ import {
   TeacherClassAssignment,
   Notice,
   MoodCheckin,
+  Parent,
+  ParentStudentRelationship,
+  Admin,
+  Counselor,
 } from "@/models";
+import { TeacherService } from "@/services/teacher.service";
+import type { AuthContext } from "@/lib/auth";
 import mongoose from "mongoose";
 
 export interface PaginationParams {
@@ -67,6 +73,59 @@ export class StudentService {
       ...student,
       classInfo,
     };
+  }
+
+  /**
+   * AUTHORIZED READ: student profile scoped to the JWT identity.
+   * JWT (auth.userId/role/schoolId) is the only identity source.
+   * studentId is only a resource selector. Scope failures -> 403 (no
+   * existence oracle). Counselor -> safe denial (no scope relation exists).
+   */
+  static async getAuthorizedStudentProfile(auth: AuthContext, studentId: string) {
+    await connectDB();
+    const denied = () => APIError.forbidden("Access denied. You are not authorized to view this student.");
+    if (!studentId || !mongoose.Types.ObjectId.isValid(studentId)) throw denied();
+    switch (auth.role) {
+      case "student": {
+        const own = await Student.findOne({ userId: auth.userId, schoolId: auth.schoolId, isActive: true }).select("_id").lean();
+        if (!own || own._id.toString() !== studentId) throw denied();
+        break;
+      }
+      case "parent": {
+        const parent = await Parent.findOne({ userId: auth.userId, schoolId: auth.schoolId }).select("_id").lean();
+        if (!parent) throw denied();
+        const link = await ParentStudentRelationship.findOne({ parentId: parent._id, studentId, schoolId: auth.schoolId }).select("_id").lean();
+        if (!link) throw denied();
+        break;
+      }
+      case "teacher": {
+        const teacher = await TeacherService.resolveTeacherByUserId(auth.userId, auth.schoolId);
+        if (!teacher) throw denied();
+        const scope = await TeacherService.getAssignedScope(teacher);
+        if (scope.classIds.length === 0) throw denied();
+        const hit = await Student.findOne({ _id: studentId, schoolId: auth.schoolId, classId: { $in: scope.classIds }, isActive: true }).select("_id").lean();
+        if (!hit) throw denied();
+        break;
+      }
+      case "admin": {
+        const admin = await Admin.findOne({ userId: auth.userId, schoolId: auth.schoolId, isActive: true }).select("_id").lean();
+        if (!admin) throw denied();
+        break;
+      }
+      case "counselor": {
+        const counselor = await Counselor.findOne({ userId: auth.userId, schoolId: auth.schoolId, isActive: true }).select("_id").lean();
+        if (!counselor) throw denied();
+        throw APIError.forbidden("Access denied. Counselor access to individual student profiles is not configured.");
+      }
+      default:
+        throw denied();
+    }
+    const student = await Student.findOne({ _id: studentId, schoolId: auth.schoolId, isActive: true }).lean();
+    if (!student) throw denied();
+    const classInfo = student.classId
+      ? await Class.findOne({ _id: student.classId, schoolId: auth.schoolId }).lean()
+      : null;
+    return { ...student, classInfo };
   }
 
   /**
