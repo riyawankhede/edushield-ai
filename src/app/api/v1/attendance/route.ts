@@ -2,47 +2,44 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { AttendanceRecord, Student } from "@/models";
 import { TeacherService } from "@/services/teacher.service";
+import { AttendanceService } from "@/services/attendance.service";
 import { requireAuth } from "@/lib/auth";
 import { apiSuccess } from "@/lib/api-response";
 import { handleAPIError, APIError } from "@/lib/api-error";
 
 export async function GET(request: NextRequest) {
   try {
-    await connectDB();
+    const auth = await requireAuth(
+      request,
+      "student",
+      "parent",
+      "teacher",
+      "counselor",
+      "admin"
+    );
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const pageSize = Math.min(100, parseInt(searchParams.get("pageSize") || "20", 10));
-    const classId = searchParams.get("classId");
-    const studentId = searchParams.get("studentId");
-    const date = searchParams.get("date");
+    const classId = searchParams.get("classId") || undefined;
+    const studentId = searchParams.get("studentId") || undefined;
+    const date = searchParams.get("date") || undefined;
+    const fromDate = searchParams.get("fromDate") || undefined;
+    const toDate = searchParams.get("toDate") || undefined;
+    const status = searchParams.get("status") || undefined;
 
-    const filter: Record<string, unknown> = {};
-    if (classId) filter.classId = classId;
-    if (studentId) filter.studentId = studentId;
-    if (date) {
-      const d = new Date(date);
-      d.setHours(0, 0, 0, 0);
-      const nextD = new Date(d);
-      nextD.setDate(nextD.getDate() + 1);
-      filter.date = { $gte: d, $lt: nextD };
-    }
-
-    const skip = (page - 1) * pageSize;
-    const [records, total] = await Promise.all([
-      AttendanceRecord.find(filter)
-        .sort({ date: -1 })
-        .skip(skip)
-        .limit(pageSize)
-        .lean(),
-      AttendanceRecord.countDocuments(filter),
-    ]);
-
-    return apiSuccess(records, {
+    const result = await AttendanceService.getAuthorizedAttendance(auth, {
       page,
       pageSize,
-      total,
-      totalPages: Math.ceil(total / pageSize),
+      classId,
+      studentId,
+      date,
+      fromDate,
+      toDate,
+      status,
     });
+
+    return apiSuccess(result.records, result.meta);
   } catch (error) {
     return handleAPIError(error);
   }
