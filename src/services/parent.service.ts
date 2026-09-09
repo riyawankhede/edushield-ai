@@ -7,8 +7,10 @@ import {
   Exam,
   Subject,
   Bus,
+  Admin,
 } from "@/models";
 import { StudentService } from "@/services/student.service";
+import type { AuthContext } from "@/lib/auth";
 import mongoose from "mongoose";
 
 export class ParentService {
@@ -89,6 +91,108 @@ export class ParentService {
       parent,
       children: enrichedChildren,
     };
+  }
+
+  /**
+   * JWT-aware, school-scoped parent resolver for protected routes.
+   *
+   * Explicitly does NOT use the "me"/first-parent fallback of resolveParent().
+   * resolveParent() is left untouched (still used by the parent dashboard
+   * server component and getLinkedChildren's internal re-fetch).
+   *
+   * @param userId   - authenticated User _id (auth.userId from JWT)
+   * @param schoolId - authenticated schoolId (auth.schoolId from JWT)
+   * @returns parent document (lean) or null when no parent matches — callers
+   *          decide the failure mode.
+   */
+  static async resolveParentByUserId(userId: string, schoolId: string) {
+    await connectDB();
+    return Parent.findOne({ userId, schoolId }).lean();
+  }
+
+  /**
+   * AUTHORIZED READ: linked children scoped to the authenticated JWT identity.
+   *
+   * The JWT (auth.userId / auth.role / auth.schoolId) is the ONLY authoritative
+   * identity source. The URL parentId is a resource selector, never proof of
+   * ownership. Every scope failure throws the same generic FORBIDDEN error so a
+   * caller cannot distinguish "no such parent" from "parent outside your scope".
+   *
+   * Rules:
+   * - parent    : own children only — Parent resolved via
+   *               { userId: auth.userId, schoolId: auth.schoolId }; URL parentId
+   *               must equal the authenticated parent's _id ("me"/"current" are
+   *               aliases for it — the first-parent DB fallback is never used).
+   * - admin     : active Admin profile required; target parent resolved with
+   *               { _id: parentId, schoolId: auth.schoolId } — cross-school
+   *               parents are invisible; "me"/"current" rejected (an admin has
+   *               no implicit parent identity).
+   * - student / teacher / counselor / unknown roles : always denied (fail closed).
+   *
+   * Child data is fetched through the existing getLinkedChildren() logic with
+   * the JWT-derived parent _id, so the relationship and student queries remain
+   * strictly scoped to auth.schoolId.
+   */
+  static async getAuthorizedLinkedChildren(
+    auth: AuthContext,
+    parentId?: string
+  ) {
+    await connectDB();
+
+    const FORBIDDEN =
+      "Access denied. You are not authorized to view this parent's children.";
+
+    switch (auth.role) {
+      case "parent": {
+        const ownParent = await this.resolveParentByUserId(
+          auth.userId,
+          auth.schoolId
+        );
+        if (!ownParent) throw APIError.forbidden(FORBIDDEN);
+        if (
+          parentId !== "me" &&
+          parentId !== "current" &&
+          ownParent._id.toString() !== parentId
+        ) {
+          throw APIError.forbidden(FORBIDDEN);
+        }
+        return this.getLinkedChildren(ownParent._id.toString());
+      }
+
+      case "admin": {
+        if (!parentId || parentId === "me" || parentId === "current") {
+          // No implicit "own parent" identity for admins — never fall back.
+          throw APIError.forbidden(FORBIDDEN);
+        }
+        const admin = await Admin.findOne({
+          userId: auth.userId,
+          schoolId: auth.schoolId,
+          isActive: true,
+        })
+          .select("_id")
+          .lean();
+        if (!admin) throw APIError.forbidden(FORBIDDEN);
+
+        const isValidObjectId =
+          mongoose.Types.ObjectId.isValid(parentId) &&
+          /^[0-9a-fA-F]{24}$/.test(parentId);
+        if (!isValidObjectId) throw APIError.forbidden(FORBIDDEN);
+
+        // School-scoped target lookup — a School B parent is simply not found
+        // for a School A admin, and both cases return the same generic 403.
+        const targetParent = await Parent.findOne({
+          _id: parentId,
+          schoolId: auth.schoolId,
+        }).lean();
+        if (!targetParent) throw APIError.forbidden(FORBIDDEN);
+
+        return this.getLinkedChildren(targetParent._id.toString());
+      }
+
+      default:
+        // student, teacher, counselor and any unknown role fail closed.
+        throw APIError.forbidden(FORBIDDEN);
+    }
   }
 
   /**
