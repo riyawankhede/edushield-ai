@@ -559,4 +559,123 @@ export class StudentService {
       },
     };
   }
+
+  /**
+   * AUTHORIZED READ: mood check-ins scoped to verified JWT identity and school.
+   *
+   * Rules:
+   * - student : own check-ins only (resolved via userId + schoolId; query studentId cannot override)
+   * - parent  : linked child in same school only (via ParentStudentRelationship)
+   * - teacher / counselor / admin / unknown : fail closed with 403
+   */
+  static async getAuthorizedStudentMoodCheckins(
+    auth: AuthContext,
+    requestedStudentId: string | undefined,
+    options: PaginationParams
+  ) {
+    await connectDB();
+    const denied = () =>
+      APIError.forbidden(
+        "Access denied. You are not authorized to view these mood check-ins."
+      );
+
+    let targetStudentId: string;
+
+    switch (auth.role) {
+      case "student": {
+        const ownStudent = await Student.findOne({
+          userId: auth.userId,
+          schoolId: auth.schoolId,
+          isActive: true,
+        })
+          .select("_id schoolId")
+          .lean();
+
+        if (!ownStudent) throw denied();
+        targetStudentId = ownStudent._id.toString();
+        break;
+      }
+
+      case "parent": {
+        const parent = await Parent.findOne({
+          userId: auth.userId,
+          schoolId: auth.schoolId,
+        })
+          .select("_id")
+          .lean();
+        if (!parent) throw denied();
+
+        let childStudentId = requestedStudentId;
+        if (!childStudentId || childStudentId === "me" || childStudentId === "current") {
+          const firstRel = await ParentStudentRelationship.findOne({
+            parentId: parent._id,
+            schoolId: auth.schoolId,
+          })
+            .select("studentId")
+            .lean();
+          if (!firstRel) throw denied();
+          childStudentId = firstRel.studentId.toString();
+        }
+
+        const isValidObjectId =
+          mongoose.Types.ObjectId.isValid(childStudentId) &&
+          /^[0-9a-fA-F]{24}$/.test(childStudentId);
+        if (!isValidObjectId) throw denied();
+
+        const link = await ParentStudentRelationship.findOne({
+          parentId: parent._id,
+          studentId: childStudentId,
+          schoolId: auth.schoolId,
+        })
+          .select("_id")
+          .lean();
+        if (!link) throw denied();
+
+        const child = await Student.findOne({
+          _id: childStudentId,
+          schoolId: auth.schoolId,
+          isActive: true,
+        })
+          .select("_id")
+          .lean();
+        if (!child) throw denied();
+
+        targetStudentId = child._id.toString();
+        break;
+      }
+
+      default:
+        // teacher, counselor, admin, and any unknown role fail closed
+        throw denied();
+    }
+
+    const page = Math.max(1, Number(options.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(options.pageSize) || 20));
+    const skip = (page - 1) * pageSize;
+
+    const filter = {
+      studentId: targetStudentId,
+      schoolId: auth.schoolId,
+    };
+
+    const [checkins, total] = await Promise.all([
+      MoodCheckin.find(filter)
+        .sort({ date: -1 })
+        .skip(skip)
+        .limit(pageSize)
+        .select("-notes")
+        .lean(),
+      MoodCheckin.countDocuments(filter),
+    ]);
+
+    return {
+      checkins,
+      meta: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
+  }
 }
