@@ -11,7 +11,18 @@ import {
 } from "@/models";
 import { StudentService } from "@/services/student.service";
 import type { AuthContext } from "@/lib/auth";
+import type { PaginationMeta } from "@/lib/api-response";
 import mongoose from "mongoose";
+
+export interface ParentDirectoryPagination {
+  page: number;
+  pageSize: number;
+}
+
+interface AuthorizedParentDirectory {
+  parents: unknown[];
+  meta: PaginationMeta;
+}
 
 export class ParentService {
   /**
@@ -108,6 +119,55 @@ export class ParentService {
   static async resolveParentByUserId(userId: string, schoolId: string) {
     await connectDB();
     return Parent.findOne({ userId, schoolId }).lean();
+  }
+
+  /**
+   * AUTHORIZED READ: school-scoped parent directory for active admins only.
+   * JWT claims establish the tenant; pagination controls only result slicing.
+   */
+  static async getAuthorizedParentDirectory(
+    auth: AuthContext,
+    pagination: ParentDirectoryPagination
+  ): Promise<AuthorizedParentDirectory> {
+    const FORBIDDEN =
+      "Access denied. You are not authorized to view this parent directory.";
+
+    if (auth.role !== "admin") {
+      throw APIError.forbidden(FORBIDDEN);
+    }
+
+    await connectDB();
+
+    const admin = await Admin.findOne({
+      userId: auth.userId,
+      schoolId: auth.schoolId,
+      isActive: true,
+    })
+      .select("_id")
+      .lean();
+    if (!admin) throw APIError.forbidden(FORBIDDEN);
+
+    const { page, pageSize } = pagination;
+    const skip = (page - 1) * pageSize;
+    const schoolFilter = { schoolId: auth.schoolId };
+    const [parents, total] = await Promise.all([
+      Parent.find(schoolFilter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize)
+        .lean(),
+      Parent.countDocuments(schoolFilter),
+    ]);
+
+    return {
+      parents,
+      meta: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
   }
 
   /**
