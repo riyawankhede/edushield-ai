@@ -1,4 +1,5 @@
-﻿import { parentDashboardMock } from "@/mock/students"
+import { redirect } from "next/navigation"
+import { getAuthContext, type AuthContext } from "@/lib/auth"
 import { ParentService } from "@/services/parent.service"
 import { StatCard } from "@/components/ui/stat-card"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -9,18 +10,35 @@ import { CalendarCheck, ClipboardList, GraduationCap, Sparkles, Bell, Bus, BookO
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default async function ParentDashboard() {
-  let data = parentDashboardMock
-  let isLive = false
-
+  let auth: AuthContext
   try {
-    const liveData = await ParentService.getParentDashboard("me")
-    if (liveData) {
-      data = liveData as typeof parentDashboardMock
-      isLive = true
-    }
-  } catch (err) {
-    console.warn("[Parent Dashboard] Falling back to mock data:", err)
+    auth = await getAuthContext()
+  } catch {
+    redirect("/login")
   }
+
+  if (auth.role !== "parent") {
+    const roleRoutes: Record<string, string> = {
+      admin: "/admin",
+      teacher: "/teacher",
+      student: "/student",
+      counselor: "/counselor",
+    }
+    redirect(roleRoutes[auth.role] || "/login")
+  }
+
+  let data: Awaited<ReturnType<typeof ParentService.getAuthorizedParentDashboard>>
+  try {
+    data = await ParentService.getAuthorizedParentDashboard(auth, "me")
+  } catch {
+    redirect("/login")
+  }
+
+  if (!data || !data.student) {
+    redirect("/login")
+  }
+
+  const isLive = true
 
   const student = data.student
   const attendanceTrendVal = parseFloat(student.attendance.trend) || 0
