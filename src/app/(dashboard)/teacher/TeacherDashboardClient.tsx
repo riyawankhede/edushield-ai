@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { CalendarCheck, ClipboardList, GraduationCap, Sparkles, Clock, MessageSquare, AlertTriangle, CheckCircle2, AlertCircle, FileText, Users, Activity, Bell, Database } from "lucide-react"
+import { RiskBadge } from "@/components/ui/risk-badge"
+import { CalendarCheck, ClipboardList, GraduationCap, Sparkles, Clock, MessageSquare, AlertTriangle, CheckCircle2, AlertCircle, FileText, Users, Activity, Bell, Database, TrendingDown } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 interface TeacherDashboardData {
@@ -35,8 +36,95 @@ interface TeacherDashboardData {
   assignedClasses?: Array<{ id: string; name: string }>
 }
 
-export default function TeacherDashboardClient({ teacher, isLive }: { teacher: TeacherDashboardData; isLive: boolean }) {
+interface RiskData {
+  students: Array<{
+    student: { _id: string; firstName: string; lastName: string; studentCode?: string }
+    riskScore: {
+      _id: string
+      riskScore: number
+      riskCategory: "low" | "medium" | "high"
+      contributingFactors: Array<{
+        factor: string
+        weight: number
+        value: unknown
+        description: string
+      }>
+    } | null
+  }>
+  highCount: number
+  mediumCount: number
+  lowCount: number
+}
+
+function generateRiskInsights(riskData: RiskData) {
+  const insights = []
+
+  if (riskData.highCount > 0) {
+    insights.push({
+      id: 1,
+      type: "HIGH PRIORITY",
+      message: `${riskData.highCount} student${riskData.highCount > 1 ? 's' : ''} require immediate counselor review for high-risk factors.`,
+      severity: "high",
+      count: riskData.highCount,
+      time: "Current"
+    })
+  }
+
+  if (riskData.mediumCount > 0) {
+    insights.push({
+      id: 2,
+      type: "ATTENTION NEEDED",
+      message: `${riskData.mediumCount} student${riskData.mediumCount > 1 ? 's show' : ' shows'} medium-risk indicators across attendance and academic performance.`,
+      severity: "medium",
+      count: riskData.mediumCount,
+      time: "Current"
+    })
+  }
+
+  // Find most common contributing factor
+  const allFactors = riskData.students
+    .filter(s => s.riskScore)
+    .flatMap(s => s.riskScore!.contributingFactors)
+  
+  const factorCounts = new Map<string, number>()
+  allFactors.forEach(f => {
+    const count = factorCounts.get(f.factor) || 0
+    factorCounts.set(f.factor, count + 1)
+  })
+
+  const topFactor = Array.from(factorCounts.entries())
+    .sort((a, b) => b[1] - a[1])[0]
+
+  if (topFactor) {
+    const factorName = topFactor[0].charAt(0).toUpperCase() + topFactor[0].slice(1)
+    insights.push({
+      id: 3,
+      type: "TREND ANALYSIS",
+      message: `${factorName} is the strongest contributing factor among at-risk students (${topFactor[1]} cases).`,
+      severity: "info",
+      count: topFactor[1],
+      time: "Current"
+    })
+  }
+
+  return insights
+}
+
+export default function TeacherDashboardClient({ teacher, isLive, riskData }: { teacher: TeacherDashboardData; isLive: boolean; riskData: RiskData | null }) {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+
+  // Use live risk data if available, otherwise fall back to legacy data
+  const hasLiveRiskData = riskData && riskData.students.length > 0
+  const studentsToDisplay = hasLiveRiskData
+    ? riskData.students.slice(0, 7)
+    : teacher.studentsRequiringAttention
+
+  const attentionRequiredCount = hasLiveRiskData
+    ? riskData.highCount + riskData.mediumCount
+    : teacher.metrics.studentsRequiringAttention
+
+  // Generate data-driven insights
+  const riskInsights = hasLiveRiskData && riskData ? generateRiskInsights(riskData) : []
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6 w-full min-w-0">
@@ -105,7 +193,7 @@ export default function TeacherDashboardClient({ teacher, isLive }: { teacher: T
         />
         <StatCard
           title="Attention Required"
-          value={teacher.metrics.studentsRequiringAttention}
+          value={attentionRequiredCount}
           icon={AlertCircle}
           description="Academic/Attendance risk"
           className="border-warning/50 bg-warning/5"
@@ -187,56 +275,137 @@ export default function TeacherDashboardClient({ teacher, isLive }: { teacher: T
             <div className="flex items-center justify-between">
               <CardTitle>Students Requiring Attention</CardTitle>
               <Badge variant="outline" className="border-warning/50 text-warning bg-warning/10 text-[10px] uppercase">
-                <Sparkles className="h-3 w-3 mr-1" /> {isLive ? "LIVE DATA" : "DEMO INSIGHT"}
+                <Sparkles className="h-3 w-3 mr-1" /> {hasLiveRiskData ? "LIVE RISK DATA" : "DEMO INSIGHT"}
               </Badge>
             </div>
-            <CardDescription>AI-flagged students needing support</CardDescription>
+            <CardDescription>
+              {hasLiveRiskData 
+                ? "AI-powered risk assessment from real student data" 
+                : "AI-flagged students needing support"}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-muted-foreground uppercase bg-muted/50 rounded-t-lg">
-                  <tr>
-                    <th className="px-4 py-3 rounded-tl-lg font-medium">Student</th>
-                    <th className="px-4 py-3 font-medium hidden sm:table-cell">Class</th>
-                    <th className="px-4 py-3 font-medium">Risk Indicator</th>
-                    <th className="px-4 py-3 font-medium text-right rounded-tr-lg">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {teacher.studentsRequiringAttention.map((student) => (
-                    <tr key={student.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                              {student.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col">
-                            <span className="font-medium whitespace-nowrap">{student.name}</span>
-                            <span className="text-xs text-muted-foreground sm:hidden">{student.class}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 hidden sm:table-cell">{student.class}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
-                          <span className={`text-xs font-medium flex items-center gap-1 ${student.status === 'Critical' ? 'text-destructive' : 'text-warning'}`}>
-                            {student.status === 'Critical' && <AlertTriangle className="h-3 w-3" />}
-                            {student.indicator}
-                          </span>
-                          <span className="text-xs text-muted-foreground">{student.stat}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Button variant="ghost" size="sm" className="h-8 text-xs">View</Button>
-                      </td>
+            {hasLiveRiskData && riskData ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-xs text-muted-foreground uppercase bg-muted/50 rounded-t-lg">
+                    <tr>
+                      <th className="px-4 py-3 rounded-tl-lg font-medium">Student</th>
+                      <th className="px-4 py-3 font-medium">Risk Level</th>
+                      <th className="px-4 py-3 font-medium">Score</th>
+                      <th className="px-4 py-3 font-medium">Top Factors</th>
+                      <th className="px-4 py-3 font-medium text-right rounded-tr-lg">Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {studentsToDisplay.map((item) => {
+                      if (!('riskScore' in item)) {
+                        // Legacy fallback data structure
+                        return null
+                      }
+                      const { student, riskScore } = item
+                      if (!riskScore) return null
+                      
+                      const topFactors = riskScore.contributingFactors
+                        .sort((a, b) => b.weight * (typeof b.value === 'number' ? b.value : 0) - a.weight * (typeof a.value === 'number' ? a.value : 0))
+                        .slice(0, 3)
+
+                      return (
+                        <tr key={student._id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                  {student.firstName[0]}{student.lastName[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col">
+                                <span className="font-medium whitespace-nowrap">
+                                  {student.firstName} {student.lastName}
+                                </span>
+                                {student.studentCode && (
+                                  <span className="text-xs text-muted-foreground">{student.studentCode}</span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <RiskBadge category={riskScore.riskCategory} showIcon />
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="font-mono text-sm font-medium">
+                              {(riskScore.riskScore * 100).toFixed(0)}%
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap gap-1">
+                              {topFactors.map((factor, idx: number) => (
+                                <div key={idx} className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  {factor.factor === 'attendance' && <TrendingDown className="h-3 w-3 text-destructive" />}
+                                  {factor.factor === 'mood' && <AlertTriangle className="h-3 w-3 text-warning" />}
+                                  {factor.factor === 'homework' && <ClipboardList className="h-3 w-3 text-warning" />}
+                                  {factor.factor === 'behavior' && <AlertCircle className="h-3 w-3 text-warning" />}
+                                  <span className="capitalize">{factor.factor}</span>
+                                  {idx < topFactors.length - 1 && <span className="text-muted-foreground/50">•</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <Button variant="ghost" size="sm" className="h-8 text-xs">View</Button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-xs text-muted-foreground uppercase bg-muted/50 rounded-t-lg">
+                    <tr>
+                      <th className="px-4 py-3 rounded-tl-lg font-medium">Student</th>
+                      <th className="px-4 py-3 font-medium hidden sm:table-cell">Class</th>
+                      <th className="px-4 py-3 font-medium">Risk Indicator</th>
+                      <th className="px-4 py-3 font-medium text-right rounded-tr-lg">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teacher.studentsRequiringAttention.map((student) => (
+                      <tr key={student.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                {student.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="font-medium whitespace-nowrap">{student.name}</span>
+                              <span className="text-xs text-muted-foreground sm:hidden">{student.class}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 hidden sm:table-cell">{student.class}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col gap-1">
+                            <span className={`text-xs font-medium flex items-center gap-1 ${student.status === 'Critical' ? 'text-destructive' : 'text-warning'}`}>
+                              {student.status === 'Critical' && <AlertTriangle className="h-3 w-3" />}
+                              {student.indicator}
+                            </span>
+                            <span className="text-xs text-muted-foreground">{student.stat}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button variant="ghost" size="sm" className="h-8 text-xs">View</Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -248,18 +417,20 @@ export default function TeacherDashboardClient({ teacher, isLive }: { teacher: T
                 <Sparkles className="h-5 w-5 shrink-0" />
                 <span className="truncate">AI Student Insights</span>
               </CardTitle>
-              <Badge variant="outline" className="shrink-0 text-[10px] uppercase border-info/20 text-info">{isLive ? "Live" : "Demo Data"}</Badge>
+              <Badge variant="outline" className="shrink-0 text-[10px] uppercase border-info/20 text-info">
+                {hasLiveRiskData ? "Live Risk Data" : "Demo Data"}
+              </Badge>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {teacher.aiInsights.map((insight) => (
+              {(hasLiveRiskData && riskInsights.length > 0 ? riskInsights : teacher.aiInsights).map((insight) => (
                 <div key={insight.id} className="bg-background rounded-lg p-3 border shadow-sm">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-semibold uppercase text-muted-foreground">{insight.type}</span>
                     <span className="text-[10px] text-muted-foreground">{insight.time}</span>
                   </div>
-                  <p className="text-sm font-medium">{insight.message}</p>
+                  <p className="text-sm font-medium">{hasLiveRiskData ? insight.message : insight.message}</p>
                 </div>
               ))}
             </div>

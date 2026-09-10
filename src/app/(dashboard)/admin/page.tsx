@@ -47,16 +47,45 @@ const fallbackData: AdminDashboardData = {
 export default async function AdminDashboardPage() {
   let data: AdminDashboardData = fallbackData
   let isLive = false
+  let riskDistribution: { low: number; medium: number; high: number } | null = null
 
   try {
     const liveData = await AdminService.getAdminDashboard()
     if (liveData) {
       data = liveData as unknown as AdminDashboardData
       isLive = true
+      
+      // Fetch live risk distribution
+      riskDistribution = await fetchRiskDistribution(liveData as { schoolId?: string; id?: string })
     }
   } catch (err) {
     console.warn("[Admin Dashboard] Falling back to mock data:", err)
   }
 
-  return <AdminDashboardClient data={data} isLive={isLive} />
+  return <AdminDashboardClient data={data} isLive={isLive} riskDistribution={riskDistribution} />
+}
+
+async function fetchRiskDistribution(adminData: { schoolId?: string; id?: string }) {
+  try {
+    const schoolId = adminData.schoolId || adminData.id
+    
+    // For a complete picture, we need to query all risk scores
+    // Import the RiskScore model dynamically
+    const { default: RiskScore } = await import('@/models/RiskScore')
+    
+    const [lowCount, mediumCount, highCount] = await Promise.all([
+      RiskScore.countDocuments({ schoolId, riskCategory: 'low', status: 'active' }),
+      RiskScore.countDocuments({ schoolId, riskCategory: 'medium', status: 'active' }),
+      RiskScore.countDocuments({ schoolId, riskCategory: 'high', status: 'active' })
+    ])
+    
+    return {
+      low: lowCount,
+      medium: mediumCount,
+      high: highCount
+    }
+  } catch (err) {
+    console.warn("[Risk Distribution] Failed:", err)
+    return null
+  }
 }

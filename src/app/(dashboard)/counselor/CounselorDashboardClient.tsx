@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Lock, HeartPulse, AlertTriangle, ShieldAlert, CalendarClock, Activity, Eye, Sparkles, PhoneCall, CheckSquare, Database } from "lucide-react"
+import { RiskBadge } from "@/components/ui/risk-badge"
+import { Lock, HeartPulse, AlertTriangle, ShieldAlert, CalendarClock, Activity, Eye, Sparkles, PhoneCall, CheckSquare, Database, TrendingDown, AlertCircle, ClipboardList } from "lucide-react"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts"
 import {
   Dialog,
@@ -18,6 +19,28 @@ import {
 } from "@/components/ui/dialog"
 
 const COLORS = ['var(--primary)', 'var(--info)', 'var(--warning)', 'var(--destructive)', 'hsl(var(--muted-foreground))']
+
+interface HighRiskStudent {
+  _id: string
+  studentId: {
+    _id: string
+    firstName: string
+    lastName: string
+    studentCode?: string
+    grade?: string
+    section?: string
+  }
+  riskScore: number
+  riskCategory: "high"
+  contributingFactors: Array<{
+    factor: string
+    weight: number
+    value: unknown
+    description: string
+  }>
+  requiresCounselorReview: boolean
+  assessmentDate: Date
+}
 
 export interface CounselorDashboardData {
   id: string
@@ -40,11 +63,15 @@ export interface CounselorDashboardData {
   recentActivity: Array<{ id: number; message: string; time: string }>
 }
 
-export default function CounselorDashboardClient({ counselor, isLive }: { counselor: CounselorDashboardData; isLive: boolean }) {
+export default function CounselorDashboardClient({ counselor, isLive, highRiskStudents }: { counselor: CounselorDashboardData; isLive: boolean; highRiskStudents: HighRiskStudent[] }) {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
 
   type Case = { id: string; student: string; studentName?: string; category: string; priority: string; status: string; updated: string }
   const [selectedCase, setSelectedCase] = useState<Case | null>(null)
+  const [selectedRiskStudent, setSelectedRiskStudent] = useState<HighRiskStudent | null>(null)
+
+  const hasLiveRiskData = highRiskStudents && highRiskStudents.length > 0
+  const highRiskCount = hasLiveRiskData ? highRiskStudents.length : counselor.metrics.highPriority
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6 w-full min-w-0">
@@ -91,7 +118,7 @@ export default function CounselorDashboardClient({ counselor, isLive }: { counse
         />
         <StatCard
           title="High Priority"
-          value={counselor.metrics.highPriority}
+          value={highRiskCount}
           icon={AlertTriangle}
           description="Requires immediate review"
           className="border-destructive/30 bg-destructive/5 text-destructive"
@@ -169,6 +196,124 @@ export default function CounselorDashboardClient({ counselor, isLive }: { counse
             </div>
           </CardContent>
         </Card>
+
+        {/* Students Requiring Counselor Review - HIGH RISK */}
+        {hasLiveRiskData && (
+          <Card className="lg:col-span-12 border-destructive/30 bg-destructive/5 min-w-0">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="h-5 w-5" />
+                  Students Requiring Counselor Review
+                </CardTitle>
+                <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-500/30 bg-emerald-500/10">
+                  Live Risk Assessment
+                </Badge>
+              </div>
+              <CardDescription>
+                High-risk students identified by AI-powered risk assessment (requires human review)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left bg-background rounded-lg">
+                  <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
+                    <tr>
+                      <th className="px-4 py-3 rounded-tl-lg font-medium">Student</th>
+                      <th className="px-4 py-3 font-medium">Grade</th>
+                      <th className="px-4 py-3 font-medium">Risk Score</th>
+                      <th className="px-4 py-3 font-medium">Contributing Factors</th>
+                      <th className="px-4 py-3 font-medium">Assessment Date</th>
+                      <th className="px-4 py-3 font-medium text-right rounded-tr-lg">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {highRiskStudents.slice(0, 10).map((student) => {
+                      const topFactors = student.contributingFactors
+                        .sort((a, b) => {
+                          const aValue = typeof a.value === 'number' ? a.value : 0
+                          const bValue = typeof b.value === 'number' ? b.value : 0
+                          return b.weight * bValue - a.weight * aValue
+                        })
+                        .slice(0, 4)
+                      
+                      return (
+                        <tr key={student._id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarFallback className="bg-destructive/10 text-destructive text-xs font-medium">
+                                  {student.studentId.firstName[0]}{student.studentId.lastName[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {student.studentId.firstName} {student.studentId.lastName}
+                                </span>
+                                {student.studentId.studentCode && (
+                                  <span className="text-xs text-muted-foreground">{student.studentId.studentCode}</span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm">
+                              {student.studentId.grade || '–'} {student.studentId.section || ''}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col gap-1">
+                              <RiskBadge category={student.riskCategory} showIcon />
+                              <span className="text-xs font-mono text-muted-foreground">
+                                Score: {(student.riskScore * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col gap-1">
+                              {topFactors.map((factor, idx) => (
+                                <div key={idx} className="flex items-center gap-1.5 text-xs">
+                                  {factor.factor === 'attendance' && <TrendingDown className="h-3 w-3 text-destructive" />}
+                                  {factor.factor === 'mood' && <AlertCircle className="h-3 w-3 text-warning" />}
+                                  {factor.factor === 'homework' && <ClipboardList className="h-3 w-3 text-warning" />}
+                                  {factor.factor === 'behavior' && <AlertTriangle className="h-3 w-3 text-warning" />}
+                                  <span className="capitalize font-medium">{factor.factor}:</span>
+                                  <span className="text-muted-foreground">{factor.description}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(student.assessmentDate).toLocaleDateString()}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 text-xs border-destructive/30 hover:bg-destructive/10"
+                              onClick={() => setSelectedRiskStudent(student)}
+                            >
+                              Review Details
+                            </Button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {highRiskStudents.length > 10 && (
+                <div className="mt-4 text-center">
+                  <Button variant="outline" size="sm" className="text-xs">
+                    View All {highRiskStudents.length} High-Risk Students
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Follow-ups Due */}
         <Card className="lg:col-span-4 min-w-0">
@@ -466,6 +611,96 @@ export default function CounselorDashboardClient({ counselor, isLive }: { counse
             <div className="flex gap-2">
               <Button variant="outline" className="w-full sm:w-auto">Update Status</Button>
               <Button className="w-full sm:w-auto">Schedule Follow-up</Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Risk Student Detail Modal */}
+      <Dialog open={!!selectedRiskStudent} onOpenChange={(open) => !open && setSelectedRiskStudent(null)}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <div className="flex items-center justify-between mb-2">
+              <RiskBadge category={selectedRiskStudent?.riskCategory || 'high'} score={selectedRiskStudent?.riskScore} showIcon />
+              <Badge variant="outline" className="text-[10px] text-destructive border-destructive/30">
+                {selectedRiskStudent?.requiresCounselorReview ? 'REQUIRES REVIEW' : 'ASSESSED'}
+              </Badge>
+            </div>
+            <DialogTitle className="text-xl flex items-center gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-destructive/10 text-destructive text-xs">
+                  {selectedRiskStudent?.studentId.firstName[0]}{selectedRiskStudent?.studentId.lastName[0]}
+                </AvatarFallback>
+              </Avatar>
+              {selectedRiskStudent?.studentId.firstName} {selectedRiskStudent?.studentId.lastName}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedRiskStudent?.studentId.studentCode} • Grade {selectedRiskStudent?.studentId.grade} {selectedRiskStudent?.studentId.section}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="space-y-1">
+                <span className="text-muted-foreground text-xs">Risk Score</span>
+                <p className="font-bold text-lg text-destructive font-mono">
+                  {selectedRiskStudent ? (selectedRiskStudent.riskScore * 100).toFixed(1) : 0}%
+                </p>
+              </div>
+              <div className="space-y-1">
+                <span className="text-muted-foreground text-xs">Assessment Date</span>
+                <p className="font-medium">
+                  {selectedRiskStudent ? new Date(selectedRiskStudent.assessmentDate).toLocaleDateString() : ''}
+                </p>
+              </div>
+            </div>
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                Contributing Risk Factors
+              </h4>
+              <div className="space-y-3">
+                {selectedRiskStudent?.contributingFactors
+                  .sort((a, b) => {
+                    const aValue = typeof a.value === 'number' ? a.value : 0
+                    const bValue = typeof b.value === 'number' ? b.value : 0
+                    return b.weight * bValue - a.weight * aValue
+                  })
+                  .map((factor, idx) => (
+                    <div key={idx} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border">
+                      <div className="shrink-0 mt-0.5">
+                        {factor.factor === 'attendance' && <TrendingDown className="h-4 w-4 text-destructive" />}
+                        {factor.factor === 'mood' && <AlertCircle className="h-4 w-4 text-warning" />}
+                        {factor.factor === 'homework' && <ClipboardList className="h-4 w-4 text-warning" />}
+                        {factor.factor === 'behavior' && <AlertTriangle className="h-4 w-4 text-warning" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-semibold capitalize">{factor.factor}</span>
+                          <span className="text-xs text-muted-foreground">Weight: {(factor.weight * 100).toFixed(0)}%</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{factor.description}</p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+            <div className="border-t pt-4">
+              <div className="bg-info/10 border border-info/20 rounded-lg p-3">
+                <p className="text-xs text-info/90 flex items-start gap-2">
+                  <Sparkles className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>
+                    This is an AI-generated risk assessment, not a clinical diagnosis. 
+                    Counselor review and professional judgment are required before taking action.
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2 border-t pt-4">
+            <Button variant="outline" onClick={() => setSelectedRiskStudent(null)}>Close</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" className="w-full sm:w-auto">Create Case</Button>
+              <Button className="w-full sm:w-auto bg-destructive hover:bg-destructive/90">Schedule Intervention</Button>
             </div>
           </DialogFooter>
         </DialogContent>

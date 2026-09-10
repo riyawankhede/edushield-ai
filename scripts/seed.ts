@@ -27,6 +27,7 @@ import path from "path";
 import fs from "fs";
 import mongoose from "mongoose";
 import { parse } from "csv-parse/sync";
+import { hashPassword } from "../src/lib/password";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const BATCH_SIZE = 1000;
@@ -88,8 +89,8 @@ function loadCsv(filename: string): Record<string, string>[] {
 }
 
 // ── Batch inserter ────────────────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function batchInsert(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   model: mongoose.Model<any>,
   docs: object[],
   label: string
@@ -135,9 +136,23 @@ async function main() {
   console.log(`${c.grey}Strategy: DROP + RECREATE | Batch size: ${BATCH_SIZE}${c.reset}\n`);
 
   const uri = resolveUri();
+  
+  // Set MONGODB_URI in process.env for compatibility with connectDB() in services
+  // This ensures that any service (e.g., RiskScoreService) that calls connectDB()
+  // will find the required environment variable and use the existing Mongoose connection
+  process.env.MONGODB_URI = uri;
+  
   log.info("Connecting to MongoDB Atlas...");
   await mongoose.connect(uri, { serverSelectionTimeoutMS: 15000 });
   log.ok(`Connected to DB: ${mongoose.connection.db?.databaseName}`);
+
+  // Generate a real bcrypt hash for demo accounts.
+  // All seeded users share this password for hackathon / development use.
+  // NEVER use this pattern in production — production accounts must have
+  // individual, user-chosen passwords.
+  log.info("Generating demo password hash (bcrypt, cost 12)…");
+  const DEMO_PASSWORD_HASH = await hashPassword("Password123!");
+  log.ok("  Demo password hash ready");
 
   // Import all models (must be after connect for hot-reload safety)
   const {
@@ -271,7 +286,7 @@ async function main() {
   // ── Admin user (synthetic — not in CSV) ─────────────────────────────────────
   const adminUserDoc = await User.create({
     email: "admin@edushield.org",
-    passwordHash: "$2b$10$placeholder_hash_admin_do_not_use",
+    passwordHash: DEMO_PASSWORD_HASH,
     role: "admin",
     schoolId,
     isActive: true,
@@ -283,7 +298,7 @@ async function main() {
   const teacherRows = loadCsv("teachers.csv");
   const teacherUserDocs = teacherRows.map((r) => ({
     email: r.email,
-    passwordHash: "$2b$10$placeholder_hash_seed_do_not_use",
+    passwordHash: DEMO_PASSWORD_HASH,
     role: "teacher" as const,
     schoolId,
     isActive: r.isActive === "True",
@@ -320,7 +335,7 @@ async function main() {
   const studentRows = loadCsv("students.csv");
   const studentUserDocs = studentRows.map((r) => ({
     email: `${r.studentId.toLowerCase()}@students.edushield.org`,
-    passwordHash: "$2b$10$placeholder_hash_seed_do_not_use",
+    passwordHash: DEMO_PASSWORD_HASH,
     role: "student" as const,
     schoolId,
     isActive: r.isActive === "True",
@@ -373,7 +388,7 @@ async function main() {
     const lastName = nameParts.slice(1).join(" ") || r.lastName;
     parentUserDocs.push({
       email: parentEmail,
-      passwordHash: "$2b$10$placeholder_hash_seed_do_not_use",
+      passwordHash: DEMO_PASSWORD_HASH,
       role: "parent",
       schoolId,
       isActive: true,
@@ -564,17 +579,85 @@ async function main() {
   // ════════════════════════════════════════════════════════════════════════════
   log.section("Layer 6: Large tables (Attendance / Submissions / Results)");
 
-  // AttendanceRecord — 108k rows
-  log.info("  Loading attendance_records.csv...");
-  const attendanceRows = loadCsv("attendance_records.csv");
-  const attendanceDocs = attendanceRows.map((r) => ({
-    studentId: idMap.student.get(r.studentId),
-    classId: idMap.class.get(r.classId),
-    date: new Date(r.date),
-    status: r.status as "present" | "absent" | "late" | "excused",
-    recordedBy: adminOid,
-    schoolId,
-  }));
+  // AttendanceRecord — 108k rows (REGENERATED WITH RECENT DATES)
+  log.info("  Generating recent attendance records (last 30 days)...");
+  
+  // Generate attendance for last 30 days instead of using CSV
+  const attendanceDocs = [];
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today);
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+  
+  // Create risk profiles for students
+  // 70% healthy, 20% moderate risk, 10% high risk
+  const studentList = Array.from(idMap.student.values());
+  const classIds = Array.from(idMap.class.values());
+  const healthyCount = Math.floor(studentList.length * 0.70);
+  const moderateCount = Math.floor(studentList.length * 0.20);
+  
+  const healthyStudents = studentList.slice(0, healthyCount);
+  const moderateStudents = studentList.slice(healthyCount, healthyCount + moderateCount);
+  const strugglingStudents = studentList.slice(healthyCount + moderateCount);
+  
+  // Store struggling students for behavior observations later
+  const strugglingStudentIds = new Set(strugglingStudents);
+  
+  // Generate 180 records per student (6 days/week * 30 days)
+  let studentIndex = 0;
+  for (const studentId of studentList) {
+    const isHealthy = healthyStudents.includes(studentId);
+    const isModerate = moderateStudents.includes(studentId);
+    
+    // Determine attendance rate based on risk profile
+    let baseAttendanceRate;
+    if (isHealthy) {
+      baseAttendanceRate = 0.92 + Math.random() * 0.08; // 92-100%
+    } else if (isModerate) {
+      baseAttendanceRate = 0.80 + Math.random() * 0.11; // 80-91%
+    } else {
+      baseAttendanceRate = 0.60 + Math.random() * 0.19; // 60-79%
+    }
+    
+    // Get student's class (use round-robin if needed)
+    const classId = studentIndex < studentRows.length 
+      ? idMap.class.get(studentRows[studentIndex].classId) 
+      : classIds[studentIndex % classIds.length];
+    
+    // Generate attendance records for school days in last 30 days
+    for (let day = 0; day < 30; day++) {
+      const currentDate = new Date(thirtyDaysAgo);
+      currentDate.setDate(currentDate.getDate() + day);
+      
+      // Skip Sundays
+      if (currentDate.getDay() === 0) continue;
+      
+      // Determine status based on attendance rate
+      const rand = Math.random();
+      let status: "present" | "absent" | "late" | "excused";
+      
+      if (rand < baseAttendanceRate) {
+        status = "present";
+      } else if (rand < baseAttendanceRate + 0.05) {
+        status = "late";
+      } else if (rand < baseAttendanceRate + 0.08) {
+        status = "excused";
+      } else {
+        status = "absent";
+      }
+      
+      attendanceDocs.push({
+        studentId,
+        classId: classId || classIds[0],
+        date: new Date(currentDate),
+        status,
+        recordedBy: adminOid,
+        schoolId,
+      });
+    }
+    
+    studentIndex++;
+  }
+  
   summary["attendance_records"] = await batchInsert(
     AttendanceRecord,
     attendanceDocs,
@@ -618,22 +701,54 @@ async function main() {
   );
 
   // ════════════════════════════════════════════════════════════════════════════
-  // LAYER 7: Mood Check-ins — 72k rows
+  // LAYER 7: Mood Check-ins — REGENERATED WITH RECENT DATES
   // ════════════════════════════════════════════════════════════════════════════
   log.section("Layer 7: Mood Check-ins");
 
-  const checkinRows = loadCsv("mood_checkins.csv");
-  const checkinDocs = checkinRows.map((r) => ({
-    studentId: idMap.student.get(r.studentId),
-    date: new Date(r.date),
-    moodScore: parseInt(r.moodScore),
-    moodLabel: r.moodLabel as "great" | "good" | "okay" | "low" | "struggling",
-    notes: r.notes || undefined,
-    isAnonymous: r.isAnonymous === "True",
-    nlpAnalyzed: false,
-    schoolId,
-    createdAt: new Date(r.date),
-  }));
+  // Generate mood check-ins for last 30 days with realistic variation
+  const checkinDocs = [];
+  const moodLabels: Array<"great" | "good" | "okay" | "low" | "struggling"> = ["great", "good", "okay", "low", "struggling"];
+  
+  // Generate 120 check-ins per student over 30 days (4 per day average)
+  for (const studentId of studentList) {
+    const isHealthy = healthyStudents.includes(studentId);
+    const isModerate = moderateStudents.includes(studentId);
+    
+    // Determine base mood based on risk profile
+    let baseMood;
+    if (isHealthy) {
+      baseMood = 4.2 + Math.random() * 0.8; // 4.2-5.0 (good to great)
+    } else if (isModerate) {
+      baseMood = 3.0 + Math.random() * 1.2; // 3.0-4.2 (okay to good)
+    } else {
+      baseMood = 2.0 + Math.random() * 1.0; // 2.0-3.0 (low to okay)
+    }
+    
+    // Generate 120 mood check-ins over 30 days
+    for (let i = 0; i < 120; i++) {
+      const daysBack = Math.floor(Math.random() * 30);
+      const checkInDate = new Date(today);
+      checkInDate.setDate(checkInDate.getDate() - daysBack);
+      checkInDate.setHours(Math.floor(Math.random() * 8) + 8); // 8am-4pm
+      
+      // Add some day-to-day variation (±0.5 points)
+      const moodScore = Math.max(1, Math.min(5, Math.round(baseMood + (Math.random() - 0.5))));
+      const moodLabel = moodLabels[5 - moodScore]; // Map 5->great, 1->struggling
+      
+      checkinDocs.push({
+        studentId,
+        date: checkInDate,
+        moodScore,
+        moodLabel,
+        notes: undefined,
+        isAnonymous: false,
+        nlpAnalyzed: false,
+        schoolId,
+        createdAt: checkInDate,
+      });
+    }
+  }
+  
   summary["mood_checkins"] = await batchInsert(
     MoodCheckin,
     checkinDocs,
@@ -706,6 +821,93 @@ async function main() {
     "SafetyIncidents"
   );
   summary["safety_incidents"] = incidentDocs.length;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // LAYER 9: Behavior Observations (NEW - for high-risk students)
+  // ════════════════════════════════════════════════════════════════════════════
+  log.section("Layer 9: Behavior Observations");
+  
+  const { default: BehaviorObservation } = await import("../src/models/BehaviorObservation");
+  
+  const behaviorDocs = [];
+  const behaviorCategories: Array<"participation" | "conduct" | "peer_interaction" | "focus" | "other"> = 
+    ["participation", "conduct", "peer_interaction", "focus", "other"];
+  
+  const concernNotes = [
+    "Disruptive behavior during class, repeatedly talking out of turn",
+    "Not participating in group activities, isolating from peers",
+    "Difficulty focusing on tasks, frequently distracted",
+    "Incomplete assignments, not following instructions",
+    "Argumentative with classmates, conflict during group work",
+    "Late to class multiple times this week",
+    "Not bringing required materials to class",
+    "Sleeping during lecture, appears exhausted",
+    "Aggressive response when corrected by teacher",
+    "Failure to complete homework consistently"
+  ];
+  
+  // Add behavior observations for struggling students only
+  // Generate 3-8 concerns per struggling student over last 30 days
+  const teacherList = Array.from(idMap.teacher.values());
+  
+  for (const studentId of Array.from(strugglingStudentIds)) {
+    const concernCount = 3 + Math.floor(Math.random() * 6); // 3-8 concerns
+    
+    // Get a random teacher for this student
+    const teacherId = teacherList[Math.floor(Math.random() * teacherList.length)];
+    
+    for (let i = 0; i < concernCount; i++) {
+      const daysBack = Math.floor(Math.random() * 30);
+      const observationDate = new Date(today);
+      observationDate.setDate(observationDate.getDate() - daysBack);
+      observationDate.setHours(Math.floor(Math.random() * 8) + 8); // 8am-4pm
+      
+      behaviorDocs.push({
+        schoolId,
+        studentId,
+        teacherId,
+        observationDate,
+        type: "concern",
+        category: behaviorCategories[Math.floor(Math.random() * behaviorCategories.length)],
+        notes: concernNotes[Math.floor(Math.random() * concernNotes.length)],
+        actionTaken: i % 2 === 0 ? "Spoke with student after class" : undefined,
+      });
+    }
+  }
+  
+  summary["behavior_observations"] = await batchInsert(
+    BehaviorObservation,
+    behaviorDocs,
+    "BehaviorObservations"
+  );
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // RISK SCORES
+  // ════════════════════════════════════════════════════════════════════════════
+  log.section("Generating Risk Scores");
+  
+  try {
+    // Import RiskScoreService
+    const { RiskScoreService } = await import("../src/services/risk-score.service");
+    
+    // Generate risk scores for all students
+    const riskResults = await RiskScoreService.generateRiskScoresForSchool(schoolId);
+    
+    summary["risk_scores"] = riskResults.success;
+    
+    log.ok(`  Risk Scores: ${riskResults.success} generated`);
+    log.info(`    Low risk: ${riskResults.low}`);
+    log.info(`    Medium risk: ${riskResults.medium}`);
+    log.info(`    High risk: ${riskResults.high}`);
+    log.info(`    Requiring counselor review: ${riskResults.high}`);
+    
+    if (riskResults.failed > 0) {
+      log.warn(`    Failed: ${riskResults.failed}`);
+    }
+  } catch (error) {
+    log.err(`Risk score generation failed: ${error instanceof Error ? error.message : String(error)}`);
+    summary["risk_scores"] = 0;
+  }
 
   // ════════════════════════════════════════════════════════════════════════════
   // SUMMARY

@@ -75,10 +75,46 @@ export interface AdminDashboardData {
 export default function AdminDashboardClient({
   data,
   isLive,
+  riskDistribution
 }: {
   data: AdminDashboardData
   isLive: boolean
+  riskDistribution: { low: number; medium: number; high: number } | null
 }) {
+  // Calculate live risk distribution data if available
+  const hasLiveRiskData = riskDistribution !== null && (riskDistribution.low + riskDistribution.medium + riskDistribution.high) > 0
+  
+  const displayRiskData = hasLiveRiskData && riskDistribution ? [
+    {
+      name: 'Low Risk',
+      value: riskDistribution.low,
+      fill: '#10b981' // emerald-500
+    },
+    {
+      name: 'Medium Risk',
+      value: riskDistribution.medium,
+      fill: '#f59e0b' // amber-500
+    },
+    {
+      name: 'High Risk',
+      value: riskDistribution.high,
+      fill: '#ef4444' // red-500
+    }
+  ] : data.riskDistributionData
+  
+  const totalStudents = hasLiveRiskData && riskDistribution
+    ? riskDistribution.low + riskDistribution.medium + riskDistribution.high
+    : displayRiskData.reduce((sum, item) => sum + item.value, 0)
+  
+  const displayRiskPercentages = displayRiskData.map(item => ({
+    ...item,
+    percentage: totalStudents > 0 ? ((item.value / totalStudents) * 100).toFixed(1) : '0'
+  }))
+  
+  const studentsNeedingSupport = hasLiveRiskData && riskDistribution
+    ? riskDistribution.medium + riskDistribution.high
+    : 38 // fallback
+
   return (
     <div className="flex flex-col gap-6 w-full max-w-full">
       {/* 2. Page Header */}
@@ -264,7 +300,7 @@ export default function AdminDashboardClient({
               <CardDescription>Risk distribution across the student body</CardDescription>
             </div>
             <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 uppercase text-[10px] font-bold">
-              {isLive ? "DB BASELINE" : "DEMO DATA"}
+              {hasLiveRiskData ? "LIVE RISK DATA" : isLive ? "DB BASELINE" : "DEMO DATA"}
             </Badge>
           </CardHeader>
           <CardContent>
@@ -273,7 +309,7 @@ export default function AdminDashboardClient({
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={data.riskDistributionData}
+                      data={displayRiskData}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
@@ -282,30 +318,38 @@ export default function AdminDashboardClient({
                       dataKey="value"
                       stroke="none"
                     >
-                      {data.riskDistributionData.map((entry, index) => (
+                      {displayRiskData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
-                    <RechartsTooltip formatter={(value) => `${value}%`} />
+                    <RechartsTooltip formatter={(value) => `${value} students`} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
               <div className="flex flex-col gap-3 w-full md:w-auto">
-                {data.riskDistributionData.map((item, index) => (
+                {displayRiskPercentages.map((item, index) => (
                   <div key={index} className="flex items-center justify-between gap-6">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.fill }}></div>
                       <span className="text-sm font-medium">{item.name}</span>
                     </div>
-                    <span className="text-sm font-bold text-slate-700">{item.value}%</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-slate-700">{item.value}</span>
+                      <span className="text-xs text-muted-foreground">({item.percentage}%)</span>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
             <div className="mt-4 p-4 bg-slate-50 rounded-lg flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-700">Students requiring additional support:</p>
-                <p className="text-2xl font-bold text-amber-600">38</p>
+                <p className="text-sm font-medium text-slate-700">Students requiring counselor review:</p>
+                <p className="text-2xl font-bold text-amber-600">{studentsNeedingSupport}</p>
+                {hasLiveRiskData && riskDistribution && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {riskDistribution.high} high-risk, {riskDistribution.medium} medium-risk
+                  </p>
+                )}
               </div>
               <Button variant="outline" size="sm">
                 Review with Counselor

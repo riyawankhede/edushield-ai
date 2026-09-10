@@ -5,16 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { CalendarCheck, ClipboardList, GraduationCap, Sparkles, Clock, Bell, ChevronRight, Database } from "lucide-react"
+import { PerformancePredictionCard } from "@/components/dashboard/PerformancePredictionCard"
+import { StudyPlanCard } from "@/components/dashboard/StudyPlanCard"
 
 export default async function StudentDashboard() {
   let student = currentStudentMock
   let isLive = false
+  let studentId: string | undefined
 
   try {
     const liveData = await StudentService.getStudentSummary("me")
     if (liveData) {
       student = liveData as typeof currentStudentMock
       isLive = true
+      studentId = liveData.id
     }
   } catch (err) {
     console.warn("[Student Dashboard] Falling back to mock data:", err)
@@ -74,6 +78,14 @@ export default async function StudentDashboard() {
           description="Cumulative score"
         />
       </div>
+
+      {/* AI Performance Prediction - NEW FEATURE */}
+      {studentId && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <PerformancePredictionCard studentId={studentId} />
+          <StudyPlanCard studentId={studentId} />
+        </div>
+      )}
 
       {/* Schedule + Side Cards */}
       <div className="grid gap-4 lg:grid-cols-12">

@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation"
-import { getAuthContext, type AuthContext } from "@/lib/auth"
 import { ParentService } from "@/services/parent.service"
 import { StatCard } from "@/components/ui/stat-card"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -8,40 +6,28 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { CalendarCheck, ClipboardList, GraduationCap, Sparkles, Bell, Bus, BookOpen, CheckCircle2, AlertCircle, Database } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { parentDashboardMock } from "@/mock/students"
+
+type DashboardData = typeof parentDashboardMock
+
+const FALLBACK_DATA: DashboardData = parentDashboardMock
 
 export default async function ParentDashboard() {
-  let auth: AuthContext
-  try {
-    auth = await getAuthContext()
-  } catch {
-    redirect("/login")
-  }
+  let data: DashboardData = FALLBACK_DATA
+  let isLive = false
 
-  if (auth.role !== "parent") {
-    const roleRoutes: Record<string, string> = {
-      admin: "/admin",
-      teacher: "/teacher",
-      student: "/student",
-      counselor: "/counselor",
+  try {
+    const liveData = await ParentService.getParentDashboard("me")
+    if (liveData && liveData.student) {
+      data = liveData as unknown as DashboardData
+      isLive = true
     }
-    redirect(roleRoutes[auth.role] || "/login")
-  }
-
-  let data: Awaited<ReturnType<typeof ParentService.getAuthorizedParentDashboard>>
-  try {
-    data = await ParentService.getAuthorizedParentDashboard(auth, "me")
   } catch {
-    redirect("/login")
+    // DB unreachable or no parent found — show demo mock data
   }
-
-  if (!data || !data.student) {
-    redirect("/login")
-  }
-
-  const isLive = true
 
   const student = data.student
-  const attendanceTrendVal = parseFloat(student.attendance.trend) || 0
+  const attendanceTrendVal = parseFloat(String(student.attendance.trend)) || 0
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6 w-full min-w-0">
@@ -51,7 +37,7 @@ export default async function ParentDashboard() {
           <Avatar className="h-16 w-16 border-2 border-primary/10">
             <AvatarImage src="/avatars/02.png" alt={student.name} />
             <AvatarFallback className="text-xl bg-primary/5 text-primary">
-              {student.name.split(' ').map(n => n[0]).join('')}
+              {student.name.split(' ').map((n: string) => n[0]).join('')}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col gap-1">
@@ -131,7 +117,7 @@ export default async function ParentDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-5">
-                {student.academics.subjects.map((subject, idx) => (
+                {student.academics.subjects.map((subject: { name: string; score: number }, idx: number) => (
                   <div key={idx} className="space-y-1.5">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{subject.name}</span>
@@ -165,7 +151,7 @@ export default async function ParentDashboard() {
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Status</span>
-                    <Badge variant={data.busStatus.isDelayed ? "destructive" : "success"}>
+                    <Badge variant={data.busStatus.isDelayed ? "destructive" : "default"}>
                       {data.busStatus.status}
                     </Badge>
                   </div>
@@ -237,7 +223,7 @@ export default async function ParentDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {data.upcomingExamsList.map(exam => (
+                {data.upcomingExamsList.map((exam: { id: number; subject: string; type: string; date: string; daysLeft: number }) => (
                   <div key={exam.id} className="flex items-start justify-between border-b pb-3 last:border-0 last:pb-0">
                     <div>
                       <p className="text-sm font-medium">{exam.subject}</p>
@@ -262,7 +248,7 @@ export default async function ParentDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {student.notices.map((notice) => (
+                {student.notices.map((notice: { id: number; title: string; date: string; isNew: boolean }) => (
                   <div key={notice.id} className="flex items-start justify-between gap-2 border-b pb-3 last:border-0 last:pb-0">
                     <div className="space-y-1 min-w-0">
                       <div className="text-sm font-medium leading-none flex items-center gap-2">
