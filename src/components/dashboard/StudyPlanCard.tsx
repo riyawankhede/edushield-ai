@@ -35,6 +35,13 @@ export function StudyPlanCard({ studentId, className }: StudyPlanCardProps) {
 
   useEffect(() => {
     async function fetchStudyPlan() {
+      // Guard: don't fetch if no valid studentId
+      if (!studentId || studentId.length === 0) {
+        setLoading(false)
+        setError("No student ID available")
+        return
+      }
+
       try {
         setLoading(true)
         setError(null)
@@ -55,9 +62,7 @@ export function StudyPlanCard({ studentId, className }: StudyPlanCardProps) {
       }
     }
 
-    if (studentId) {
-      fetchStudyPlan()
-    }
+    fetchStudyPlan()
   }, [studentId])
 
   if (loading) {
@@ -154,8 +159,8 @@ export function StudyPlanCard({ studentId, className }: StudyPlanCardProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="font-semibold text-base truncate">{item.subjectName}</h4>
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className={`text-[10px] uppercase shrink-0 ${getPriorityColor(item.priority)}`}
                     >
                       <span className="mr-1">{getPriorityIcon(item.priority)}</span>

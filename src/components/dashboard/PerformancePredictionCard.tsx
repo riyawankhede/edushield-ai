@@ -31,6 +31,13 @@ export function PerformancePredictionCard({ studentId, className }: PerformanceP
 
   useEffect(() => {
     async function fetchPrediction() {
+      // Guard: don't fetch if no valid studentId
+      if (!studentId || studentId.length === 0) {
+        setLoading(false)
+        setError("No student ID available")
+        return
+      }
+
       try {
         setLoading(true)
         setError(null)
@@ -51,9 +58,7 @@ export function PerformancePredictionCard({ studentId, className }: PerformanceP
       }
     }
 
-    if (studentId) {
-      fetchPrediction()
-    }
+    fetchPrediction()
   }, [studentId])
 
   if (loading) {

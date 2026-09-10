@@ -359,6 +359,7 @@ export class StudentService {
 
     return {
       id: student.studentCode,
+      _id: student._id.toString(), // MongoDB ObjectId for API calls
       name: `${student.firstName} ${student.lastName}`,
       firstName: student.firstName,
       lastName: student.lastName,

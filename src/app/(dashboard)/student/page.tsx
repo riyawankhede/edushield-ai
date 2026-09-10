@@ -18,7 +18,7 @@ export default async function StudentDashboard() {
     if (liveData) {
       student = liveData as typeof currentStudentMock
       isLive = true
-      studentId = liveData.id
+      studentId = liveData._id // Use MongoDB ObjectId
     }
   } catch (err) {
     console.warn("[Student Dashboard] Falling back to mock data:", err)
